@@ -1,0 +1,65 @@
+FROM ubuntu:jammy
+
+ENV HOME /root
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update
+
+RUN apt-get -y dist-upgrade
+
+RUN apt-get -y --no-install-recommends install \
+    build-essential \
+    ca-certificates \
+    curl \
+    doxygen \
+    g++ \
+    gdb \
+    git \
+    gnupg \
+    gpg \
+    less \
+    libabsl-dev \
+    libboost-all-dev \
+    libgrpc++-dev \
+    libprotobuf-dev \
+    libssl-dev \
+    ninja-build \
+    pkg-config \
+    protobuf-compiler \
+    protobuf-compiler-grpc \
+    software-properties-common \
+    sudo \
+    wget
+
+# Add the public key for the llvm repository to get the correct clang version
+RUN bash -c 'wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|apt-key add -'
+RUN apt-add-repository -y 'deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-15 main'
+
+# Add public key and repository to get cmake 3.25+
+RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - > /usr/share/keyrings/kitware-archive-keyring.gpg
+RUN echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ jammy main' > /etc/apt/sources.list.d/kitware.list
+RUN apt-get update
+
+RUN apt-get -y --no-install-recommends install -t llvm-toolchain-jammy-15 \
+    clang-15 \
+    clang-tidy-15
+
+RUN apt-get -y install cmake
+
+RUN mkdir -p /root/opt/src
+# Install Viam C++ SDK from source frozen at a tag
+ENV PINNED_TAG="releases/v0.0.10"
+RUN cd /root/opt/src && \
+    git clone https://github.com/viamrobotics/viam-cpp-sdk && \
+    cd viam-cpp-sdk && \
+    git fetch --all --tags && \
+    git checkout ${PINNED_TAG} && \
+    mkdir build && \
+    cd build && \
+    cmake  -DCMAKE_BUILD_TYPE=RelWithDebInfo -DVIAMCPPSDK_USE_DYNAMIC_PROTOS=ON -DVIAMCPPSDK_OFFLINE_PROTO_GENERATION=ON -DCMAKE_INSTALL_PREFIX=/usr/local .. -G Ninja  && \
+    ninja all -j 4 && \
+    ninja install -j 4 && \
+    rm -rf /root/opt/src/viam-cpp-sdk
+
+# Install GTest
+RUN apt install -y libgtest-dev
