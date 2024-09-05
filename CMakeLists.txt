@@ -21,7 +21,6 @@ project(tflite_cpu
 )
 set(CMAKE_CXX_STANDARD 14)
 
-set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 find_package(viam-cpp-sdk REQUIRED)
 
@@ -60,4 +59,3 @@ target_link_libraries(tflite_cpu
 install(
   TARGETS tflite_cpu
 )
-

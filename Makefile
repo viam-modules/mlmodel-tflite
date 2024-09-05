@@ -6,4 +6,5 @@ tflite_cpu: src/*
 	mkdir build && \
 	cd build && \
 	cmake -G Ninja .. && \
-	ninja all -j 4
+	ninja -v all -j 4 && \
+	mv tflite_cpu ../
