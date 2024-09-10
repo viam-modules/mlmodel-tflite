@@ -24,13 +24,6 @@ set(CMAKE_CXX_STANDARD 14)
 find_package(Threads REQUIRED)
 find_package(viam-cpp-sdk REQUIRED)
 
-# In theory, this should make the change of `BUILD_SHARED_LIBS`
-# scoped just to the tensorflow build. We always want to build
-# tensorflow statically. If it is built dynamically, then we need to
-# install it. However, that requires building with
-# `TFLITE_ENABLE_INSTALL` in order to ensure that the dynamic
-# libraries get installed to the instalation root, which seems to
-# just not really work. Yes, this feels bad.
 include(FetchContent)
 function(fetchcontent_tflite)
   set(BUILD_SHARED_LIBS OFF)
