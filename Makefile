@@ -18,3 +18,4 @@ tflite_cpu-appimage: tflite_cpu
 	rm -f deploy/tflite_cpu* && \
 	appimage-builder --recipe viam-tflite-cpu-aarch64.yml
 	cp ./packaging/appimages/*-aarch64.AppImage ./packaging/appimages/deploy/
+	chmod a+x ./packaging/appimages/deploy/*

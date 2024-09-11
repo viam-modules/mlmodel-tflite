@@ -311,6 +311,7 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
             }
             label_path_string = *lp_string;
         }
+	state->label_path = std::move(label_path_string);
         // Configuration parsing / extraction is complete. Move on to
         // building the actual model with the provided information.
 
@@ -458,8 +459,11 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
                 output_info.shape.push_back(TfLiteTensorDim(tensor, j));
             }
             if (state->label_path != "") {
+		if (!output_info.extra) {
+			output_info.extra = std::make_shared<std::unordered_map<std::string, std::shared_ptr<vsdk::ProtoType>>>();
+		}
                 auto protoValue = std::make_shared<vsdk::ProtoType>(std::string(state->label_path));
-                (*output_info.extra)["labels"] = protoValue;
+                output_info.extra->insert({"labels", protoValue});
             }
             state->output_tensor_indices_by_name[output_info.name] = i;
             state->metadata.outputs.emplace_back(std::move(output_info));
