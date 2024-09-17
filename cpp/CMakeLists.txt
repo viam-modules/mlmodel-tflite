@@ -20,24 +20,11 @@ project(tflite_cpu
     LANGUAGES CXX 
 )
 set(CMAKE_CXX_STANDARD 14)
+set(BUILD_SHARED_LIBS OFF)
 
 find_package(Threads REQUIRED)
 find_package(viam-cpp-sdk REQUIRED)
-
-include(FetchContent)
-function(fetchcontent_tflite)
-  set(BUILD_SHARED_LIBS OFF)
-  set(TFLITE_C_BUILD_SHARED_LIBS OFF)
-  FetchContent_Declare(
-    tensorflow
-    GIT_REPOSITORY https://github.com/tensorflow/tensorflow.git
-    GIT_PROGRESS TRUE
-    GIT_TAG v2.13.0
-    SOURCE_SUBDIR tensorflow/lite/c
-  )
-  FetchContent_MakeAvailable(tensorflow)
-endfunction()
-fetchcontent_tflite()
+find_package(tensorflowlite REQUIRED)
 
 add_executable(tflite_cpu
   src/tflite_cpu.cpp
@@ -46,7 +33,7 @@ add_executable(tflite_cpu
 target_link_libraries(tflite_cpu
   PRIVATE Threads::Threads
   PRIVATE viam-cpp-sdk::viamsdk
-  PRIVATE tensorflowlite_c
+  PRIVATE tensorflow::tensorflowlite
 )
 
 install(

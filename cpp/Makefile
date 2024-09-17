@@ -2,13 +2,11 @@ format: src/*.cpp src/*.hpp test/*.cpp
 	ls src/*.cpp src/*.hpp test/*.cpp | xargs clang-format -i --style="{BasedOnStyle: Google, IndentWidth: 4, ColumnLimit: 100}"
 
 tflite_cpu: src/*
-	rm -rf build/ && \
-	mkdir build && \
-	cd build && \
-	cmake -G Ninja .. && \
-	ninja -v all -j 4 && \
-	chmod a+x tflite_cpu && \
-	mv tflite_cpu ../
+	rm -rf build-conan/ && \
+	conan install . --output-folder=build-conan --build=missing -o "*:shared=False" && \
+	cmake . --preset conan-release && \
+	cmake --build --preset=conan-release -j && \
+	cp build-conan/build/Release/tflite_cpu .
 
 TAG_VERSION?=latest
 tflite_cpu-appimage: export TAG_NAME = ${TAG_VERSION}
