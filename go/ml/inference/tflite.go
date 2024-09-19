@@ -14,8 +14,8 @@ import (
 	"go.viam.com/rdk/ml"
 	"gorgonia.org/tensor"
 
-	tfliteSchema "tflite/ml/inference/tflite"
-	metadata "tflite/ml/inference/tflite_metadata"
+	tfliteSchema "mlmodel-tflite/ml/inference/tflite"
+	metadata "mlmodel-tflite/ml/inference/tflite_metadata"
 )
 
 const tfLiteMetadataName string = "TFLITE_METADATA"

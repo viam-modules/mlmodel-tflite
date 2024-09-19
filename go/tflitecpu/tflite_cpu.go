@@ -17,8 +17,8 @@ import (
 	"strconv"
 	"strings"
 
-	inf "tflite/ml/inference"
-	"tflite/ml/inference/tflite_metadata"
+	inf "mlmodel-tflite/ml/inference"
+	"mlmodel-tflite/ml/inference/tflite_metadata"
 
 	"github.com/pkg/errors"
 	"go.opencensus.io/trace"
