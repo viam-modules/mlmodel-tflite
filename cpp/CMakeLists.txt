@@ -13,6 +13,7 @@
 # limitations under the License.
 
 cmake_minimum_required(VERSION 3.25 FATAL_ERROR)
+set(CMAKE_PROJECT_VERSION 0.0.1)
 
 project(tflite_cpu
     DESCRIPTION "Viam module for tflite inference  on the CPU"
@@ -32,8 +33,8 @@ add_executable(tflite_cpu
 
 target_link_libraries(tflite_cpu
   PRIVATE Threads::Threads
-  PRIVATE viam-cpp-sdk::viamsdk
-  PRIVATE tensorflow::tensorflowlite
+  PRIVATE "$<LINK_LIBRARY:WHOLE_ARCHIVE,viam-cpp-sdk::viamsdk>"
+  PRIVATE "$<LINK_LIBRARY:WHOLE_ARCHIVE,tensorflow::tensorflowlite>"
 )
 
 install(

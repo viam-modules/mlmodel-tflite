@@ -4,9 +4,7 @@ format: src/*.cpp src/*.hpp test/*.cpp
 tflite_cpu: src/*
 	rm -rf build-conan/ && \
 	conan install . --output-folder=build-conan --build=missing -o "*:shared=False" && \
-	cmake . --preset conan-release && \
-	cmake --build --preset=conan-release -j && \
-	cp build-conan/build/Release/tflite_cpu .
+	conan create . -o "&:shared=False" -o "*:shared=False"
 
 TAG_VERSION?=latest
 tflite_cpu-appimage: export TAG_NAME = ${TAG_VERSION}
