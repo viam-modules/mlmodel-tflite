@@ -1,2 +1,4 @@
 # Keep android shared libraries 
 !**/jni/**/*.so
+!darwin/**/*.dylib
+!darwin/**/*.so
