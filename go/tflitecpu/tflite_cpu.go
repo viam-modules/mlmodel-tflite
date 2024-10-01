@@ -6,6 +6,7 @@ package tflitecpu
 /*
 #cgo android,arm64 LDFLAGS: -L${SRCDIR}/android/jni/arm64-v8a
 #cgo android,amd64 LDFLAGS: -L${SRCDIR}/android/jni/x86_64
+#cgo darwin,arm64 LDFLAGS: -L${SRCDIR}/darwin/arm64/ -ltensorflowlite_c
 */
 import "C"
 

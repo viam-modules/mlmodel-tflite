@@ -8,9 +8,11 @@ TOOL_BIN = bin/gotools/$(shell uname -s)-$(shell uname -m)
 UNAME_S ?= $(shell uname -s)
 
 build:
-	mkdir -p $(BIN_OUTPUT_PATH)
-	rm -f $(BIN_OUTPUT_PATH)/tflite_cpu
-	go build $(LDFLAGS) -o $(BIN_OUTPUT_PATH)/tflite_cpu main.go
+	rm -f tflite_cpu
+	LIBRARY_PATH= GOOS=darwin GOARCH=arm64 CGO_ENABLED=1 CGO_LDFLAGS= \
+		 go build -v -o tflite_cpu main.go 
+	install_name_tool -add_rpath @executable_path/tflitecpu/darwin/arm64/ tflite_cpu 
+	install_name_tool -change /opt/homebrew/opt/tensorflowlite/lib/libtensorflowlite_c.dylib @rpath/libtensorflowlite_c.dylib tflite_cpu
 
 module.tar.gz: build
 	mkdir -p $(BIN_OUTPUT_PATH)
@@ -19,9 +21,6 @@ module.tar.gz: build
 
 static_tflite_cpu: main.go
 	go build -ldflags="-extldflags=-static $(COMMON_LDFLAGS)" -o bin/static/tflite_cpu-$(shell go env GOARCH) main.go
-
-tflite_cpu: main.go 
-	go build -o tflite_cpu main.go
 
 setup:
 	if [ "$(UNAME_S)" = "Linux" ]; then \
