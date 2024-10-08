@@ -2,3 +2,4 @@
 !**/jni/**/*.so
 !darwin/**/*.dylib
 !darwin/**/*.so
+!linux/**/*.so

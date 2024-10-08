@@ -1,0 +1,18 @@
+{
+    "module_id": "viam:tflite_cpu",
+    "build": {
+	    "build": "make module.tar.gz",
+	    "arch": ["linux/amd64", "linux/arm64", "darwin/arm64"]
+    },
+    "visibility": "public",
+    "url": "https://github.com/viam-modules/mlmodel-tflite",
+    "description": "An ML Model Service that is used to run tensorflowLite model files.",
+    "models": [
+      {
+        "api": "rdk:service:mlmodel",
+        "model": "viam:mlmodel-tflite:tflite_cpu"
+      }
+    ],
+    "entrypoint": "tflite_cpu"
+}
+  
