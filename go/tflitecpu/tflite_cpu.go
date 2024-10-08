@@ -6,6 +6,7 @@ package tflitecpu
 /*
 #cgo android,arm64 LDFLAGS: -L${SRCDIR}/android/jni/arm64-v8a
 #cgo android,amd64 LDFLAGS: -L${SRCDIR}/android/jni/x86_64
+#cgo darwin,arm64 LDFLAGS: -L${SRCDIR}/darwin/arm64/ -ltensorflowlite_c
 */
 import "C"
 
@@ -17,8 +18,8 @@ import (
 	"strconv"
 	"strings"
 
-	inf "tflite/ml/inference"
-	"tflite/ml/inference/tflite_metadata"
+	inf "mlmodel-tflite/ml/inference"
+	"mlmodel-tflite/ml/inference/tflite_metadata"
 
 	"github.com/pkg/errors"
 	"go.opencensus.io/trace"

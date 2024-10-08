@@ -1,4 +1,4 @@
-module tflite
+module mlmodel-tflite
 
 go 1.21.12
 
