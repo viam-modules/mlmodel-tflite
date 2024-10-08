@@ -29,28 +29,34 @@ else
     @echo "Unsupported OS: $(MOD_OS) or architecture: $(MOD_ARCH)"
 endif
 
-tflite_cpu: 
+%: TFLITE_LIB_PATH = $(shell otool -L tflite_cpu | grep libtensorflowlite_c.dylib | awk '{print $$1}')
+
+build:
+	rm -rf tflite_cpu
+	go build -v -o tflite_cpu main.go
+
+tflite_cpu: build
 ifeq ($(MOD_OS),Darwin)
 ifeq ($(MOD_ARCH),x86_64)
 	@echo "Unsupported OS: $(MOD_OS) or architecture: $(MOD_ARCH)"
 else ifeq ($(MOD_ARCH),arm64)
-	LIBRARY_PATH= GOOS=darwin GOARCH=arm64 CGO_ENABLED=1 CGO_LDFLAGS= \
-		 go build -v -o tflite_cpu main.go 
 	install_name_tool -add_rpath @executable_path/tflitecpu/darwin/arm64/ tflite_cpu 
-	install_name_tool -change /opt/homebrew/opt/tensorflowlite/lib/libtensorflowlite_c.dylib @rpath/libtensorflowlite_c.dylib tflite_cpu
+	@if [ -z "$(TFLITE_LIB_PATH)" ]; then \
+		echo "libtensorflowlite_c.dylib not found in the binary tflite_cpu."; \
+		exit 1; \
+	fi
+	@if [ ! -f "$(TFLITE_LIB_PATH)" ] ; then \
+		echo "$(TFLITE_LIB_PATH) not found."; \
+		exit 1; \
+	fi
+	install_name_tool -change $(TFLITE_LIB_PATH) @rpath/libtensorflowlite_c.dylib tflite_cpu
 endif
 else ifeq ($(MOD_OS),Linux)
 ifeq ($(MOD_ARCH),x86_64)
-	LIBRARY_PATH= GOOS=linux GOARCH=amd64 CGO_ENABLED=1 CGO_LDFLAGS= \
-		 go build -v -o tflite_cpu main.go 
 	patchelf --set-rpath '$$ORIGIN/tflitecpu/linux/amd64' tflite_cpu
 else ifeq ($(MOD_ARCH),arm64)
-	LIBRARY_PATH= GOOS=linux GOARCH=arm64 CGO_ENABLED=1 CGO_LDFLAGS= \
-		 go build -v -o tflite_cpu main.go 
 	patchelf --set-rpath '$$ORIGIN/tflitecpu/linux/arm64' tflite_cpu
 else ifeq ($(MOD_ARCH),aarch64)
-	LIBRARY_PATH= GOOS=linux GOARCH=arm64 CGO_ENABLED=1 CGO_LDFLAGS= \
-		 go build -v -o tflite_cpu main.go 
 	patchelf --set-rpath '$$ORIGIN/tflitecpu/linux/arm64' tflite_cpu
 endif
 else
