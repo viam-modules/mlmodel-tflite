@@ -12,6 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+    - name: Prepare environment
+      run: |
+        cd ./go
     - uses: viamrobotics/build-action@v1.2
       with:
         version: ${{ github.ref_name }}
