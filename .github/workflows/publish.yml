@@ -13,6 +13,10 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: setup environment
+      run: |
+        cp -R go/* .
+
     - uses: viamrobotics/build-action@v1.4
       with:
         version: ${{ github.ref_name }}
