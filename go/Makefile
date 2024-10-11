@@ -64,9 +64,11 @@ else
 endif
 
 setup:
-	if [ "$(UNAME_S)" = "Linux" ]; then \
-		sudo apt install -y vim libjpeg-dev pkg-config patchelf; \
-	fi
+ifeq ($(MOD_OS),Darwin)
+	brew install tensorflowlite;
+else ifeq ($(MOD_OS),Linux)
+	sudo apt install -y vim libjpeg-dev pkg-config patchelf; 
+endif
 
 clean:
 	rm -rf tflite_cpu module.tar.gz
