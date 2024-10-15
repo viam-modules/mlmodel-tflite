@@ -5,7 +5,7 @@
 	    "build": "make module.tar.gz",
 	    "arch": ["linux/amd64", "linux/arm64", "darwin/arm64"]
     },
-    "visibility": "public",
+    "visibility": "private",
     "url": "https://github.com/viam-modules/mlmodel-tflite",
     "description": "An ML Model Service that is used to run tensorflowLite model files.",
     "models": [

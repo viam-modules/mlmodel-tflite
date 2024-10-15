@@ -60,10 +60,13 @@ else ifeq ($(MOD_ARCH),arm64)
 endif
 else ifeq ($(MOD_OS),Linux)
 ifeq ($(MOD_ARCH),x86_64)
+	cp /usr/lib/libtensorflowlite_c.so tflitecpu/linux/amd64/
 	patchelf --set-rpath '$$ORIGIN/tflitecpu/linux/amd64' tflite_cpu
 else ifeq ($(MOD_ARCH),arm64)
+	cp /usr/lib/libtensorflowlite_c.so tflitecpu/linux/arm64/
 	patchelf --set-rpath '$$ORIGIN/tflitecpu/linux/arm64' tflite_cpu
 else ifeq ($(MOD_ARCH),aarch64)
+	cp /usr/lib/libtensorflowlite_c.so tflitecpu/linux/arm64/
 	patchelf --set-rpath '$$ORIGIN/tflitecpu/linux/arm64' tflite_cpu
 endif
 else
