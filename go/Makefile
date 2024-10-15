@@ -33,7 +33,14 @@ endif
 
 build:
 	rm -rf tflite_cpu
+ifeq ($(MOD_OS),Darwin)
+	export LIBRARY_PATH=/opt/homebrew/lib && \
+	export CGO_LDFLAGS=-L/opt/homebrew/lib && \
+	export CGO_CFLAGS=-I/opt/homebrew/include && \
 	go build -v -o tflite_cpu main.go
+else
+	go build -v -o tflite_cpu main.go
+endif
 
 tflite_cpu: build
 ifeq ($(MOD_OS),Darwin)
