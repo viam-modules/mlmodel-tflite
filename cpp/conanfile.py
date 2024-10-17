@@ -41,7 +41,7 @@ class viamTfliteCpu(ConanFile):
             self.options["*"].shared = False
 
     def requirements(self):
-        self.requires("viam-cpp-sdk/0.0.11")
+        self.requires("viam-cpp-sdk/0.0.12")
         self.requires("tensorflow-lite/2.15.0")
         self.requires("abseil/20240116.2", override=True)
 
@@ -57,11 +57,3 @@ class viamTfliteCpu(ConanFile):
 
     def layout(self):
         cmake_layout(self, src_folder=".")
-
-    def test(self):
-        if can_run(self):
-            cmd = os.path.join(self.cpp.build.bindir, "tflite_module")
-            stderr = StringIO()
-            self.run(cmd, env='conanrun', stderr=stderr, ignore_errors=True)
-            if "main failed with exception:" not in stderr.getvalue():
-                raise ConanException("Unexpected error output from test")
