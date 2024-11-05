@@ -3,7 +3,7 @@
 This [module](https://docs.viam.com/registry/modular-resources/) implements the [`rdk:service:mlmodel` API](https://docs.viam.com/appendix/apis/services/ml/) in an `tflite_cpu` model.
 With this model, you can deploy [TensorFlow Lite](https://www.tensorflow.org/lite) model files as long as your models adhere to the [model requirements](#model-requirements).
 <!-- It is supported on any CPU and Linux, Raspbian, MacOS and Android machines. -->
-It is supported on any CPU and Linux and MacOS machines.
+It is supported on any CPU and Linux, Raspbian and MacOS machines.
 
 ## Requirements
 
