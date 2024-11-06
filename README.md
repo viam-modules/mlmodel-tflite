@@ -21,7 +21,7 @@ Navigate to the [**CONFIGURE** tab](https://docs.viam.com/configure/) of your [m
 Enter a name or use the suggested name for your service.
 Click **Add module** and click **Create**.
 
-If you choose to use **Builder** mode in the Viam app you can choose to configure your service with an existing model on the machine or deploy a model onto your machine:
+You can choose to configure your service with an existing model on the machine or deploy a model onto your machine:
 
 ### Deploy model on machine
 
