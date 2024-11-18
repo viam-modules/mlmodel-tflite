@@ -13,7 +13,7 @@ MOD_OS := $(shell uname -s)
 module.tar.gz: tflite_cpu
 ifeq ($(MOD_OS),Darwin)
 ifeq ($(MOD_ARCH),x86_64)
-	@echo "Unsupported OS: $(MOD_OS) or architecture: $(MOD_ARCH)"
+	tar -czf $@ tflite_cpu tflitecpu/darwin/amd64/libtensorflowlite_c.dylib
 else ifeq ($(MOD_ARCH),arm64)
 	tar -czf $@ tflite_cpu tflitecpu/darwin/arm64/libtensorflowlite_c.dylib
 endif
@@ -45,7 +45,16 @@ endif
 tflite_cpu: build
 ifeq ($(MOD_OS),Darwin)
 ifeq ($(MOD_ARCH),x86_64)
-	@echo "Unsupported OS: $(MOD_OS) or architecture: $(MOD_ARCH)"
+	install_name_tool -add_rpath @executable_path/tflitecpu/darwin/amd64/ tflite_cpu 
+	@if [ -z "$(TFLITE_LIB_PATH)" ]; then \
+		echo "libtensorflowlite_c.dylib not found in the binary tflite_cpu."; \
+		exit 1; \
+	fi
+	@if [ ! -f "$(TFLITE_LIB_PATH)" ] ; then \
+		echo "$(TFLITE_LIB_PATH) not found."; \
+		exit 1; \
+	fi
+	install_name_tool -change $(TFLITE_LIB_PATH) @rpath/libtensorflowlite_c.dylib tflite_cpu
 else ifeq ($(MOD_ARCH),arm64)
 	install_name_tool -add_rpath @executable_path/tflitecpu/darwin/arm64/ tflite_cpu 
 	@if [ -z "$(TFLITE_LIB_PATH)" ]; then \
