@@ -77,7 +77,6 @@ func (conf *TFLiteConfig) Validate(validatePath string) ([]string, error) {
 type Model struct {
 	resource.Named
 	resource.AlwaysRebuild
-	resource.TriviallyCloseable
 	conf     TFLiteConfig
 	model    *inf.TFLiteStruct
 	metadata *mlmodel.MLMetadata
@@ -129,6 +128,10 @@ func NewTFLiteCPUModel(ctx context.Context, params *TFLiteConfig, name resource.
 		return nil, errors.Wrapf(err, "could not add model from location %s", params.ModelPath)
 	}
 	return &Model{Named: name.AsNamed(), conf: *params, model: model, logger: logger}, nil
+}
+
+func (m *Model) Close(ctx context.Context) error {
+	return m.model.Close()
 }
 
 // Infer takes the input map and uses the inference package to
