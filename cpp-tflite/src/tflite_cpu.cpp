@@ -47,14 +47,7 @@ constexpr char service_name[] = "viam_tflite_cpu";
 // The following optional parameters are honored:
 //   -- `num_threads`: Sets the number of threads to be used, where applicable.
 //
-//   -- `tensor_name_remappings`: A pair of string-string maps keyed
-//      as `inputs` and `outputs`. Keys of the string-string maps are
-//      tensor names per the model, and the mapped strings are the
-//      names by which those tensors will be presented in the
-//      metadata. This is useful if you have an upstream service
-//      (e.g. the vision service) which expects to find specific
-//      tensor names in the metadata in order to properly interact
-//      with the model.
+//   -- `label_path`:  An absolute filesystem path to a .txt file of the model's category labels.
 //
 // Any additional configuration fields are ignored.
 class MLModelServiceTFLite : public vsdk::MLModelService,
@@ -153,7 +146,7 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
         // Ensure that enough inputs were provided.
         if (inputs.size() < state->input_tensor_indices_by_name.size()) {
             std::ostringstream buffer;
-            buffer << service_name << ": Too few inputs provided for inference";
+            buffer << service_name << ": Too few inputs provided for inference: " << state->input_tensor_indices_by_name.size()  << " expected, but got " << inputs.size() << " instead";
             throw std::invalid_argument(buffer.str());
         }
     // Special case: if the model has only one input tensor and only one tensor is provided,
@@ -331,50 +324,19 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
                       "or is an empty string";
             throw std::invalid_argument(buffer.str());
         }
-
-        // Process any tensor name remappings provided in the config.
-        auto remappings = attributes.find("tensor_name_remappings");
-        if (remappings != attributes.end()) {
-            const auto remappings_attributes = remappings->second.get<vsdk::ProtoStruct>();
-            if (!remappings_attributes) {
+        std::string label_path_string = ""; // default value for label_path 
+        auto label_path = attributes.find("label_path");
+        if (label_path != attributes.end()) {
+            const auto* const lp_string = label_path->second.get<std::string>();
+            if (!lp_string) {
                 std::ostringstream buffer;
                 buffer << service_name
-                       << ": Optional parameter `tensor_name_remappings` must be a dictionary";
+                       << ": string parameter `label_path` is not a string ";
                 throw std::invalid_argument(buffer.str());
             }
-            const auto populate_remappings = [](const vsdk::ProtoValue& source, auto& target) {
-                const auto source_attributes = source.get<vsdk::ProtoStruct>();
-                if (!source_attributes) {
-                    std::ostringstream buffer;
-                    buffer << service_name
-                           << ": Fields `inputs` and `outputs` of `tensor_name_remappings` must be "
-                              "dictionaries";
-                    throw std::invalid_argument(buffer.str());
-                }
-                for (const auto& kv : *source_attributes) {
-                    const auto& k = kv.first;
-                    const auto* const kv_string = kv.second.get<std::string>();
-                    if (!kv_string) {
-                        std::ostringstream buffer;
-                        buffer
-                            << service_name
-                            << ": Fields `inputs` and `outputs` of `tensor_name_remappings` must "
-                               "be dictionaries with string values";
-                        throw std::invalid_argument(buffer.str());
-                    }
-                    target[kv.first] = *kv_string;
-                }
-            };
-
-            const auto inputs_where = remappings_attributes->find("inputs");
-            if (inputs_where != remappings_attributes->end()) {
-                populate_remappings(inputs_where->second, state->input_name_remappings);
-            }
-            const auto outputs_where = remappings_attributes->find("outputs");
-            if (outputs_where != remappings_attributes->end()) {
-                populate_remappings(outputs_where->second, state->output_name_remappings);
-            }
+            label_path_string = *lp_string;
         }
+	state->label_path = std::move(label_path_string);
 
         // Configuration parsing / extraction is complete. Move on to
         // building the actual model with the provided information.
@@ -482,12 +444,7 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
 
             MLModelService::tensor_info input_info;
             const auto* name = TfLiteTensorName(tensor);
-            const auto input_name_remapping = state->input_name_remappings.find(name);
-            if (input_name_remapping != state->input_name_remappings.end()) {
-                input_info.name = input_name_remapping->second;
-            } else {
-                input_info.name = name;
-            }
+            input_info.name = name;
             input_info.data_type =
                 service_data_type_from_tflite_data_type_(TfLiteTensorType(tensor));
             for (decltype(ndims) j = 0; j != ndims; ++j) {
@@ -521,16 +478,14 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
 
             MLModelService::tensor_info output_info;
             const auto* name = TfLiteTensorName(tensor);
-            const auto output_name_remapping = state->output_name_remappings.find(name);
-            if (output_name_remapping != state->output_name_remappings.end()) {
-                output_info.name = output_name_remapping->second;
-            } else {
-                output_info.name = name;
-            }
+            output_info.name = name;
             output_info.data_type =
                 service_data_type_from_tflite_data_type_(TfLiteTensorType(tensor));
             for (decltype(ndims) j = 0; j != ndims; ++j) {
                 output_info.shape.push_back(TfLiteTensorDim(tensor, j));
+            }
+            if (state->label_path != "") {
+                output_info.extra.insert({"labels", state->label_path});
             }
             state->output_tensor_indices_by_name[output_info.name] = i;
             state->metadata.outputs.emplace_back(std::move(output_info));
@@ -616,13 +571,8 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
         // how to interact with the service.
         struct MLModelService::metadata metadata;
 
-        // Tensor renamings as extracted from our configuration. The
-        // keys are the names of the tensors per the model, the values
-        // are the names of the tensors clients expect to see / use
-        // (e.g. a vision service component expecting a tensor named
-        // `image`).
-        std::unordered_map<std::string, std::string> input_name_remappings;
-        std::unordered_map<std::string, std::string> output_name_remappings;
+	//  The label path is a file that relates the outputs of the label tensor ints to strings
+	std::string label_path;
 
         // Maps from string names of tensors to the numeric
         // value. Note that the keys here are the renamed tensors, if
