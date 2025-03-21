@@ -33,8 +33,8 @@ add_executable(tflite_cpu
 
 target_link_libraries(tflite_cpu
   PRIVATE Threads::Threads
-  PRIVATE "$<LINK_LIBRARY:WHOLE_ARCHIVE,viam-cpp-sdk::viamsdk>"
-  PRIVATE "$<LINK_LIBRARY:WHOLE_ARCHIVE,tensorflow::tensorflowlite>"
+  PRIVATE viam-cpp-sdk::viamsdk
+  PRIVATE tensorflow::tensorflowlite
 )
 
 install(
