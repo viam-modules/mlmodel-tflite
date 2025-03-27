@@ -23,4 +23,9 @@ setup:
 module.tar.gz: tflite_cpu
 	cp build/Release/tflite_cpu . && \
 	tar -cvf module.tar tflite_cpu && \
-	gzip module.tar
+	gzip module.tar && \
+	rm tflite_cpu
+
+.PHONY: lint
+lint:
+	./bin/run-clang-format.sh
