@@ -143,12 +143,6 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
         // is still locked.
         std::unique_lock<std::mutex> lock(state->interpreter_mutex);
 
-        // Ensure that enough inputs were provided.
-        if (inputs.size() < state->input_tensor_indices_by_name.size()) {
-            std::ostringstream buffer;
-            buffer << service_name << ": Too few inputs provided for inference: " << state->input_tensor_indices_by_name.size()  << " expected, but got " << inputs.size() << " instead";
-            throw std::invalid_argument(buffer.str());
-        }
     // Special case: if the model has only one input tensor and only one tensor is provided,
     // use it regardless of name
     if (state->input_tensor_indices_by_name.size() == 1 && inputs.size() == 1) {
@@ -176,6 +170,12 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
             throw std::invalid_argument(buffer.str());
         }
     } else {
+        // Ensure that enough inputs were provided.
+        if (inputs.size() < state->input_tensor_indices_by_name.size()) {
+            std::ostringstream buffer;
+            buffer << service_name << ": Too few inputs provided for inference: " << state->input_tensor_indices_by_name.size()  << " expected, but got " << inputs.size() << " instead";
+            throw std::invalid_argument(buffer.str());
+        }
         // Walk the inputs, and copy the data from each of the input
         // tensor views we were given into the associated tflite input
         // tensor buffer.
