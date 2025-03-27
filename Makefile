@@ -3,8 +3,8 @@ format: src/*.cpp src/*.hpp test/*.cpp
 
 tflite_cpu: src/*
 	rm -rf build-conan/ && \
-	conan install . --output-folder=build-conan --build=missing -o "*:shared=False" && \
-	conan create . -o "&:shared=False" -o "*:shared=False"
+	conan install . --output-folder=build-conan --build=missing -o "&:shared=False" && \
+	conan build . -o "&:shared=False"
 
 TAG_VERSION?=latest
 tflite_cpu-appimage: export TAG_NAME = ${TAG_VERSION}
@@ -19,3 +19,8 @@ tflite_cpu-appimage: tflite_cpu
 .PHONY: setup
 setup:
 	./bin/setup.sh
+
+module.tar.gz: tflite_cpu
+	cp build/Release/tflite_cpu . && \
+	tar -cvf module.tar tflite_cpu && \
+	gzip module.tar
