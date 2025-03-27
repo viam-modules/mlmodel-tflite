@@ -24,12 +24,12 @@ jobs:
           if [[ $TAG =~ ^[0-9]+\.[0-9]+\.[0-9]+(-rc[0-9]*)?$ ]]; then
             echo "Tag matches semver."
           else
-            echo "Error: tag does not match semvar"
+            echo "Error: tag does not match semver"
             exit 1
           fi
   publish:
     needs: validate-tag
-    name: Build and Upload module 
+    name: Build and Upload module
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
