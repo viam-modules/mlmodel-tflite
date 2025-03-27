@@ -23,6 +23,7 @@ conan create . -o "&:shared=False" --build=missing
 
 popd  # viam-cpp-sdk
 popd  # tmp_cpp_sdk
+rm -rf tmp_cpp_sdk
 
 # Set up the linter
 if ! command -v clang-format &> /dev/null; then
