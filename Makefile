@@ -1,7 +1,11 @@
+.PHONY: format
 format: src/*.cpp src/*.hpp test/*.cpp
 	ls src/*.cpp src/*.hpp test/*.cpp | xargs clang-format -i --style="{BasedOnStyle: Google, IndentWidth: 4, ColumnLimit: 100}"
 
-tflite_cpu: src/*
+.PHONY: tflite_cpu
+tflite_cpu: build/Release/tflite_cpu
+
+build/Release/tflite_cpu: src/*
 	rm -rf build-conan/ && \
 	conan install . --output-folder=build-conan --build=missing -o "&:shared=False" && \
 	conan build . -o "&:shared=False"
