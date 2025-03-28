@@ -1,7 +1,3 @@
-.PHONY: format
-format: src/*.cpp src/*.hpp test/*.cpp
-	ls src/*.cpp src/*.hpp test/*.cpp | xargs clang-format -i --style="{BasedOnStyle: Google, IndentWidth: 4, ColumnLimit: 100}"
-
 .PHONY: tflite_cpu
 tflite_cpu: build/Release/tflite_cpu
 

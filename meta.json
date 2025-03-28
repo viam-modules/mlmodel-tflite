@@ -4,7 +4,7 @@
         "setup": "make setup",
         "build": "make module.tar.gz",
         "arch": ["linux/amd64", "linux/arm64", "darwin/arm64"],
-        "darwin_deps": ["go", "pkg-config"]
+        "darwin_deps": ["pkg-config"]
     },
     "visibility": "public",
     "url": "https://github.com/viam-modules/mlmodel-tflite",
