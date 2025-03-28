@@ -15,6 +15,5 @@
         "model": "viam:mlmodel-tflite:tflite_cpu"
       }
     ],
-    "entrypoint": "tflite_cpu"
+    "entrypoint": "build/Release/tflite_cpu"
 }
-  
