@@ -16,7 +16,7 @@ setup:
 
 module.tar.gz: build/Release/tflite_cpu
 	tar -cvf module.tar build/Release/tflite_cpu && \
-	gzip module.tar
+	gzip -o module.tar
 
 .PHONY: lint
 lint:
