@@ -14,6 +14,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Run lint
+        run: make lint
+
       - uses: actions/cache@v3
         with:
           path: ~/.conan2
@@ -23,9 +26,6 @@ jobs:
 
       - name: Install dependencies
         run: make setup
-
-      - name: Run lint
-        run: make lint
 
       - name: Build
         run: make tflite_cpu
