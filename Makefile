@@ -14,11 +14,9 @@ build/Release/tflite_cpu: src/*
 setup:
 	./bin/setup.sh
 
-module.tar.gz: tflite_cpu
-	cp build/Release/tflite_cpu . && \
-	tar -cvf module.tar tflite_cpu && \
-	gzip module.tar && \
-	rm tflite_cpu
+module.tar.gz: build/Release/tflite_cpu
+	tar -cvf module.tar build/Release/tflite_cpu && \
+	gzip module.tar
 
 .PHONY: lint
 lint:
