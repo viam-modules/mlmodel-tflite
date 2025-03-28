@@ -14,11 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Check if clang-format is installed
-if ! command -v clang-format >/dev/null 2>&1; then
-    echo "Error: clang-format is not installed"
-    echo "Please install it using: brew install clang-format"
-    exit 1
+# Set up the linter
+if ! command -v clang-format &> /dev/null; then
+	# It's not yet installed, so let's get it!
+	echo "Installing clang-format as a linter..."
+	if [[ "$(uname)" == "Linux" ]]; then
+		sudo apt install clang-format
+	elif [[ "$(uname)" == "Darwin" ]]; then
+		brew install clang-format
+	else
+		echo "WARNING: installing the linter is not yet supported outside of Linux and Mac."
+	fi
 fi
 
 find ./src -not -path "./src/viam/api" -type f \( -name \*.cpp -o -name \*.hpp \) | xargs clang-format -style=file -i -fallback-style=none "$@"

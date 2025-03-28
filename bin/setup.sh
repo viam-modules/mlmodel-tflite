@@ -25,15 +25,3 @@ popd  # viam-cpp-sdk
 popd  # tmp_cpp_sdk
 rm -rf tmp_cpp_sdk
 
-# Set up the linter
-if ! command -v clang-format &> /dev/null; then
-	# It's not yet installed, so let's get it!
-	echo "Installing clang-format as a linter..."
-	if [[ "$(uname)" == "Linux" ]]; then
-		sudo apt install clang-format
-	elif [[ "$(uname)" == "Darwin" ]]; then
-		brew install clang-format
-	else
-		echo "WARNING: installing the linter is not yet supported outside of Linux and Mac."
-	fi
-fi
