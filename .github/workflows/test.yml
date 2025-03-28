@@ -14,7 +14,7 @@ jobs:
 
       - uses: actions/cache@v3
         with:
-          path: ~/.conan
+          path: ~/.conan2
           key: ${{runner.os}}-conan-${{ hashFiles('**/conanfile.py') }}
           restore-keys: |
             ${{ runner.os }}-conan-
