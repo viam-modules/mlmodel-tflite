@@ -12,12 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <condition_variable>
 #include <fstream>
 #include <iostream>
 #include <mutex>
 #include <pthread.h>
-#include <signal.h>
 #include <sstream>
 #include <stdexcept>
 
@@ -59,7 +57,7 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
     explicit MLModelServiceTFLite(vsdk::Dependencies dependencies,
                                   vsdk::ResourceConfig configuration)
         : MLModelService(configuration.name()),
-          state_(reconfigure_(std::move(dependencies), std::move(configuration))) {}
+          state_(configure_(std::move(dependencies), std::move(configuration))) {}
 
     ~MLModelServiceTFLite() final {
         // All invocations arrive via gRPC, so we know we are idle
@@ -74,146 +72,107 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
 
     /// @brief Stops the MLModelServiceTFLite from running.
     void stop() noexcept {
-        using std::swap;
-        try {
-            const std::lock_guard<std::mutex> lock(state_lock_);
-            if (!stopped_) {
-                stopped_ = true;
-                std::shared_ptr<state> state;
-                swap(state_, state);
-                state_ready_.notify_all();
-            }
-        } catch (...) {
-        }
+        const std::lock_guard<std::mutex> lock(state_lock_);
+        state_.reset();
     }
 
     void reconfigure(const vsdk::Dependencies& dependencies,
-                     const vsdk::ResourceConfig& configuration) final try {
-        // Care needs to be taken during reconfiguration. The
-        // framework does not offer protection against invocation
-        // during reconfiguration. Keep all state in a shared_ptr
-        // managed block, and allow client invocations to act against
-        // current state while a new configuration is built, then swap
-        // in the new state. State which is in use by existing
-        // invocations will remain valid until the clients drain. If
-        // reconfiguration fails, the component will `stop`.
+                     const vsdk::ResourceConfig& configuration) final {
 
-        // Swap out the state_ member with nullptr. Existing
-        // invocations will continue to operate against the state they
-        // hold, and new invocations will block on the state becoming
-        // populated.
-        using std::swap;
-        std::shared_ptr<state> state;
-        {
-            // Wait until we have a state in play, then take
-            // ownership, so that we don't race with other
-            // reconfigurations and so other invocations wait on a new
-            // state.
-            std::unique_lock<std::mutex> lock(state_lock_);
-            state_ready_.wait(lock, [this]() { return (state_ != nullptr) && !stopped_; });
-            check_stopped_inlock_();
-            swap(state_, state);
-        }
 
-        state = reconfigure_(dependencies, configuration);
-
-        // Reconfiguration worked: put the state in under the lock,
-        // release the lock, and then notify any callers waiting on
-        // reconfiguration to complete.
-        {
-            std::lock_guard<std::mutex> lock(state_lock_);
-            check_stopped_inlock_();
-            swap(state_, state);
-        }
-        state_ready_.notify_all();
-    } catch (...) {
-        // If reconfiguration fails for any reason, become stopped and rethrow.
-        stop();
-        throw;
+        const std::lock_guard<std::mutex> lock(state_lock_);
+        check_stopped_inlock_();
+        state_.reset();
+        state_ = configure_(dependencies, configuration);
     }
 
     std::shared_ptr<named_tensor_views> infer(const named_tensor_views& inputs,
                                               const vsdk::ProtoStruct& extra) final {
-        auto state = lease_state_();
 
         // We serialize access to the interpreter. We use a
-        // unique_lock because we will move the lock into the shared
-        // state that we return, allowing the higher level to effect a
-        // direct copy out of the tflite buffers while the interpreter
-        // is still locked.
-        std::unique_lock<std::mutex> lock(state->interpreter_mutex);
+        // `unique_lock` instead of a `lock_guard` because we will
+        // move the lock into the shared state that we return,
+        // allowing the higher level to effect a direct copy out of
+        // the tflite buffers while the interpreter is still locked.
+        std::unique_lock<std::mutex> lock(state_lock_);
+        check_stopped_inlock_();
 
-    // Special case: if the model has only one input tensor and only one tensor is provided,
-    // use it regardless of name
-    if (state->input_tensor_indices_by_name.size() == 1 && inputs.size() == 1) {
-        const auto& input_pair = *inputs.begin();
-        const auto& tensor_name = input_pair.first;
-        const auto& tensor_view = input_pair.second;
-        
-        // Get the first (and only) input tensor index
-        int tensor_index = state->input_tensor_indices_by_name.begin()->second;
-        
-        auto* const tensor = TfLiteInterpreterGetInputTensor(state->interpreter.get(), tensor_index);
-        if (!tensor) {
-            std::ostringstream buffer;
-            buffer << service_name << ": Failed to obtain tflite input tensor for `" << tensor_name << "`, the only input";
-            throw std::invalid_argument(buffer.str());
-        }
+        // Special case: if the model has only one input tensor and only one tensor is provided,
+        // use it regardless of name
+        if (state_->input_tensor_indices_by_name.size() == 1 && inputs.size() == 1) {
+            const auto& input_pair = *inputs.begin();
+            const auto& tensor_name = input_pair.first;
+            const auto& tensor_view = input_pair.second;
 
-        const auto tflite_status = 
-            boost::apply_visitor(write_to_tflite_tensor_visitor_(&tensor_name, tensor), tensor_view);
+            // Get the first (and only) input tensor index
+            int tensor_index = state_->input_tensor_indices_by_name.begin()->second;
 
-        if (tflite_status != TfLiteStatus::kTfLiteOk) {
-            std::ostringstream buffer;
-            buffer << service_name << ": input tensor `" << tensor_name << "` failed population: " 
-                   << state->interpreter_error_data;
-            throw std::invalid_argument(buffer.str());
-        }
-    } else {
-        // Ensure that enough inputs were provided.
-        if (inputs.size() < state->input_tensor_indices_by_name.size()) {
-            std::ostringstream buffer;
-            buffer << service_name << ": Too few inputs provided for inference: " << state->input_tensor_indices_by_name.size()  << " expected, but got " << inputs.size() << " instead";
-            throw std::invalid_argument(buffer.str());
-        }
-        // Walk the inputs, and copy the data from each of the input
-        // tensor views we were given into the associated tflite input
-        // tensor buffer.
-        for (const auto& kv : inputs) {
-            const auto where = state->input_tensor_indices_by_name.find(kv.first);
-            if (where == state->input_tensor_indices_by_name.end()) {
-                std::ostringstream buffer;
-                buffer << service_name << ": Tensor name `" << kv.first << "`"
-                       << " is not a known input tensor name for the model";
-                throw std::invalid_argument(buffer.str());
-            }
-            auto* const tensor =
-                TfLiteInterpreterGetInputTensor(state->interpreter.get(), where->second);
+            auto* const tensor = TfLiteInterpreterGetInputTensor(state_->interpreter.get(), tensor_index);
             if (!tensor) {
                 std::ostringstream buffer;
-                buffer << service_name << ": Failed to obtain tflite input tensor for `" << kv.first
-                       << "` (index " << where->second << ")";
+                buffer << service_name
+                       << ": Failed to obtain tflite input tensor for `" << tensor_name << "`, the only input";
                 throw std::invalid_argument(buffer.str());
             }
 
             const auto tflite_status =
-                boost::apply_visitor(write_to_tflite_tensor_visitor_(&kv.first, tensor), kv.second);
+                boost::apply_visitor(write_to_tflite_tensor_visitor_(&tensor_name, tensor), tensor_view);
 
             if (tflite_status != TfLiteStatus::kTfLiteOk) {
                 std::ostringstream buffer;
-                buffer << service_name << ": input tensor `" << kv.first
-                       << "` failed population: " << state->interpreter_error_data;
+                buffer << service_name
+                       << ": input tensor `" << tensor_name << "` failed population: "
+                       << state_->interpreter_error_data;
                 throw std::invalid_argument(buffer.str());
             }
+        } else {
+            // Ensure that enough inputs were provided.
+            if (inputs.size() < state_->input_tensor_indices_by_name.size()) {
+                std::ostringstream buffer;
+                buffer << service_name
+                       << ": Too few inputs provided for inference: " << state_->input_tensor_indices_by_name.size()
+                       << " expected, but got " << inputs.size() << " instead";
+                throw std::invalid_argument(buffer.str());
+            }
+            // Walk the inputs, and copy the data from each of the input
+            // tensor views we were given into the associated tflite input
+            // tensor buffer.
+            for (const auto& kv : inputs) {
+                const auto where = state_->input_tensor_indices_by_name.find(kv.first);
+                if (where == state_->input_tensor_indices_by_name.end()) {
+                    std::ostringstream buffer;
+                    buffer << service_name << ": Tensor name `" << kv.first << "`"
+                           << " is not a known input tensor name for the model";
+                    throw std::invalid_argument(buffer.str());
+                }
+                auto* const tensor =
+                    TfLiteInterpreterGetInputTensor(state_->interpreter.get(), where->second);
+                if (!tensor) {
+                    std::ostringstream buffer;
+                    buffer << service_name << ": Failed to obtain tflite input tensor for `" << kv.first
+                           << "` (index " << where->second << ")";
+                    throw std::invalid_argument(buffer.str());
+                }
+
+                const auto tflite_status =
+                    boost::apply_visitor(write_to_tflite_tensor_visitor_(&kv.first, tensor), kv.second);
+
+                if (tflite_status != TfLiteStatus::kTfLiteOk) {
+                    std::ostringstream buffer;
+                    buffer << service_name
+                           << ": input tensor `" << kv.first
+                           << "` failed population: " << state_->interpreter_error_data;
+                    throw std::invalid_argument(buffer.str());
+                }
+            }
         }
-    }
 
         // Invoke the interpreter and return any failure information.
-        const auto tflite_status = TfLiteInterpreterInvoke(state->interpreter.get());
+        const auto tflite_status = TfLiteInterpreterInvoke(state_->interpreter.get());
         if (tflite_status != TfLiteStatus::kTfLiteOk) {
             std::ostringstream buffer;
             buffer << service_name
-                   << ": interpreter invocation failed: " << state->interpreter_error_data;
+                   << ": interpreter invocation failed: " << state_->interpreter_error_data;
             throw std::runtime_error(buffer.str());
         }
 
@@ -231,8 +190,7 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
         // locked would need to copy the data out of the views and
         // then release the return value.
         struct inference_result_type {
-            std::shared_ptr<struct state> state;
-            std::unique_lock<std::mutex> interpreter_lock;
+            std::unique_lock<std::mutex> state_lock;
             named_tensor_views views;
         };
         auto inference_result = std::make_shared<inference_result_type>();
@@ -240,13 +198,13 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
         // Walk the outputs per our metadata and emplace an
         // appropriately typed tensor_view aliasing the interpreter
         // output tensor buffer into the inference results.
-        for (const auto& output : state->metadata.outputs) {
-            const auto where = state->output_tensor_indices_by_name.find(output.name);
-            if (where == state->output_tensor_indices_by_name.end()) {
+        for (const auto& output : state_->metadata.outputs) {
+            const auto where = state_->output_tensor_indices_by_name.find(output.name);
+            if (where == state_->output_tensor_indices_by_name.end()) {
                 continue;  // Should be impossible
             }
             const auto* const tflite_tensor =
-                TfLiteInterpreterGetOutputTensor(state->interpreter.get(), where->second);
+                TfLiteInterpreterGetOutputTensor(state_->interpreter.get(), where->second);
             inference_result->views.emplace(output.name,
                                             std::move(make_tensor_view_(output, tflite_tensor)));
         }
@@ -254,10 +212,8 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
         // The views created in the loop above are only valid until
         // the interpreter lock is released, so we keep the lock held
         // by moving the unique_lock into the inference_result
-        // object. The lock itself is only valid as long as the state
-        // is alive, so we move that in too.
-        inference_result->state = std::move(state);
-        inference_result->interpreter_lock = std::move(lock);
+        // object.
+        inference_result->state_lock = std::move(lock);
 
         // Finally, construct an aliasing shared_ptr which appears to
         // the caller as a shared_ptr to views, but in fact manages
@@ -271,40 +227,27 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
 
     struct metadata metadata(const vsdk::ProtoStruct& extra) final {
         // Just return a copy of our metadata from leased state.
-        return lease_state_()->metadata;
+        std::lock_guard<std::mutex> lock(state_lock_);
+        check_stopped_inlock_();
+        return state_->metadata;
     }
 
    private:
-    struct state;
+    struct state_;
 
     void check_stopped_inlock_() const {
-        if (stopped_) {
+        if (!state_) {
             std::ostringstream buffer;
             buffer << service_name << ": service is stopped: ";
             throw std::runtime_error(buffer.str());
         }
     }
 
-    std::shared_ptr<state> lease_state_() {
-        // Wait for our state to be valid or stopped and then obtain a
-        // shared_ptr to state if valid, incrementing the refcount, or
-        // throws if the service is stopped. We don't need to deal
-        // with interruption or shutdown because the gRPC layer will
-        // drain requests during shutdown, so it shouldn't be possible
-        // for callers to get stuck here.
-        std::unique_lock<std::mutex> lock(state_lock_);
-        state_ready_.wait(lock, [this]() { return (state_ != nullptr) && !stopped_; });
-        check_stopped_inlock_();
-        return state_;
-    }
+    static std::unique_ptr<struct state_> configure_(vsdk::Dependencies dependencies,
+                                                     vsdk::ResourceConfig configuration) {
 
-    static std::shared_ptr<state> reconfigure_(vsdk::Dependencies dependencies,
-                                               vsdk::ResourceConfig configuration) {
-        // The new state we will attempt to build. If this function
-        // returns a valid state, it will be swapped in as the current
-        // state of the service.
         auto state =
-            std::make_shared<struct state>(std::move(dependencies), std::move(configuration));
+            std::make_unique<struct state_>(std::move(dependencies), std::move(configuration));
 
         // Now we can begin parsing and validating the provided `configuration`.
         // Pull the model path out of the configuration.
@@ -324,7 +267,8 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
                       "or is an empty string";
             throw std::invalid_argument(buffer.str());
         }
-        std::string label_path_string = ""; // default value for label_path 
+
+        std::string label_path_string = ""; // default value for label_path
         auto label_path = attributes.find("label_path");
         if (label_path != attributes.end()) {
             const auto* const lp_string = label_path->second.get<std::string>();
@@ -336,7 +280,7 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
             }
             label_path_string = *lp_string;
         }
-	state->label_path = std::move(label_path_string);
+        state->label_path = std::move(label_path_string);
 
         // Configuration parsing / extraction is complete. Move on to
         // building the actual model with the provided information.
@@ -538,13 +482,10 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
     }
 
     // All of the meaningful internal state of the service is held in
-    // a separate state object so we can keep our current state alive
-    // while building a new one during reconfiguration, and then
-    // atomically swap it in on success. Existing invocations will
-    // continue to work against the old state, and new invocations
-    // will pick up the new state.
-    struct state {
-        explicit state(vsdk::Dependencies dependencies, vsdk::ResourceConfig configuration)
+    // a separate state object to help ensure clean replacement of our
+    // internals during reconfiguration.
+    struct state_ {
+        explicit state_(vsdk::Dependencies dependencies, vsdk::ResourceConfig configuration)
             : dependencies(std::move(dependencies)), configuration(std::move(configuration)) {}
 
         // The dependencies and configuration we were given at
@@ -571,17 +512,14 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
         // how to interact with the service.
         struct MLModelService::metadata metadata;
 
-	//  The label path is a file that relates the outputs of the label tensor ints to strings
-	std::string label_path;
+        //  The label path is a file that relates the outputs of the label tensor ints to strings
+        std::string label_path;
 
         // Maps from string names of tensors to the numeric
         // value. Note that the keys here are the renamed tensors, if
         // applicable.
         std::unordered_map<std::string, int> input_tensor_indices_by_name;
         std::unordered_map<std::string, int> output_tensor_indices_by_name;
-
-        // Serializes access to the interpreter and the interpreter error data.
-        std::mutex interpreter_mutex;
 
         // The configured error reporter will overwrite this string.
         std::string interpreter_error_data;
@@ -692,12 +630,13 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
         return MLModelService::make_tensor_view(tensor_data, tensor_size_t, std::move(shape));
     }
 
-    // The mutex and condition variable needed to track our state
-    // across concurrent reconfiguration and invocation.
+    // Accesss to the module state is serialized. All configuration
+    // state is held in the `state` type to make it easier to destroy
+    // the current state and replace it with a new one.
     std::mutex state_lock_;
-    std::condition_variable state_ready_;
-    std::shared_ptr<state> state_;
-    bool stopped_ = false;
+
+    // In C++17, this could be `std::optional`.
+    std::unique_ptr<struct state_> state_;
 };
 
 int serve(const std::string& socket_path) try {
