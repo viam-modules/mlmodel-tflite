@@ -18,9 +18,13 @@ set(CMAKE_PROJECT_VERSION 0.0.1)
 project(tflite_cpu
     DESCRIPTION "Viam module for tflite inference  on the CPU"
     HOMEPAGE_URL https://github.com/viam-modules/mlmodel-tflite
-    LANGUAGES CXX 
+    LANGUAGES CXX
 )
-set(CMAKE_CXX_STANDARD 14)
+
+if (NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 14)
+endif()
+
 set(BUILD_SHARED_LIBS OFF)
 
 find_package(Threads REQUIRED)
