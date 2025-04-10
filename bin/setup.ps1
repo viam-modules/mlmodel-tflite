@@ -2,8 +2,12 @@ $ErrorActionPreference = "Stop"
 
 # Set up conan
 choco install -y conan cmake git 7zip
+
+Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1
 refreshenv
-conan profile detect || Write-Host "Conan is already installed"
+
+conan profile detect
+if (!$?) { Write-Host "Conan is already installed" }
 
 # Clone the C++ SDK repo
 mkdir tmp_cpp_sdk
@@ -24,7 +28,7 @@ conan create . `
       -s:h compiler.cppstd=17 `
       -c:h tools.microsoft:winsdk_version=10.0.17763.0 `
       -s:h compiler.runtime=static `
-      -tf ""
+      -tf `"`"
 
 Pop-Location  # viam-cpp-sdk
 Pop-Location  # tmp_cpp_sdk

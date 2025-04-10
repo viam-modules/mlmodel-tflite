@@ -1,7 +1,7 @@
 ifeq ($(OS),Windows_NT)
   BIN_EXT := .exe
   SCRIPT_EXT := .ps1
-  SUBSHELL := pwsh -ExecutionPolicy Bypass -File
+  SUBSHELL := powershell -ExecutionPolicy Bypass -File
 else
   BIN_EXT :=
   SCRIPT_EXT := .sh
