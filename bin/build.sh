@@ -5,22 +5,10 @@
 #     -o pipefail: if something in the middle of a pipeline fails, the whole thing fails
 set -euxo pipefail
 
-# Set up conan
-pip install conan
-conan profile detect || echo "Conan is already installed"
+rm -rf build-conan
 
-# Clone the C++ SDK repo
-mkdir -p tmp_cpp_sdk
-pushd tmp_cpp_sdk
-git clone https://github.com/viamrobotics/viam-cpp-sdk.git
-pushd viam-cpp-sdk
-
-# Build the C++ SDK repo
-conan create . \
+conan build . \
+      --output-folder=build-conan \
       --build=missing \
       -o "&:shared=False" \
       -s:h compiler.cppstd=17
-
-popd  # viam-cpp-sdk
-popd  # tmp_cpp_sdk
-rm -rf tmp_cpp_sdk

@@ -1,17 +1,30 @@
-.PHONY: tflite_cpu
-tflite_cpu: build/Release/tflite_cpu
+ifeq ($(OS),Windows_NT)
+  BIN_EXT := .exe
+  SCRIPT_EXT := .ps1
+  SUBSHELL := pwsh -ExecutionPolicy Bypass -File
+else
+  BIN_EXT :=
+  SCRIPT_EXT := .sh
+  SUBSHELL :=
+endif
+BIN := build-conan/build/Release/tflite_cpu$(BIN_EXT)
 
-build/Release/tflite_cpu: src/*
-	rm -rf build-conan/ && \
-	conan install . --output-folder=build-conan --build=missing -o "&:shared=False" && \
-	conan build . -o "&:shared=False"
+.PHONY: tflite_cpu
+tflite_cpu: $(BIN)
+
+$(BIN): src/*
+	$(SUBSHELL) ./bin/build$(SCRIPT_EXT)
 
 .PHONY: setup
 setup:
-	./bin/setup.sh
+	$(SUBSHELL) ./bin/setup$(SCRIPT_EXT)
 
-module.tar.gz: build/Release/tflite_cpu
-	tar -czvf module.tar.gz build/Release/tflite_cpu
+module.tar.gz: tflite_cpu
+ifeq ($(OS),Windows_NT)
+	7z a -tgzip module.tar.gz $(BIN)
+else
+	tar -czvf module.tar.gz $(BIN)
+endif
 
 .PHONY: lint
 lint:
