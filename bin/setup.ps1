@@ -11,6 +11,9 @@ Push-Location tmp_cpp_sdk
 git clone https://github.com/viamrobotics/viam-cpp-sdk.git
 Push-Location viam-cpp-sdk
 
+# NOTE: If you change this version, also change it in the `conanfile.py` requirements
+git checkout releases/v0.8.0
+
 # Build the C++ SDK repo.
 #
 # TODO: Note `-tf ""`, which disables the self test. I have not been
