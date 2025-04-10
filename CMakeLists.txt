@@ -12,7 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 3.25 FATAL_ERROR)
+if (WIN32)
+  # Use a newer version of CMake on Windows, so we are NEW for
+  # https://cmake.org/cmake/help/latest/policy/CMP0149.html
+  cmake_minimum_required(VERSION 3.27 FATAL_ERROR)
+else()
+  cmake_minimum_required(VERSION 3.25 FATAL_ERROR)
+endif()
+
 set(CMAKE_PROJECT_VERSION 0.0.1)
 
 project(tflite_cpu

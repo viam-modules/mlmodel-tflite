@@ -44,7 +44,6 @@ class viamTfliteCpu(ConanFile):
         self.requires("viam-cpp-sdk/0.7.0")
         self.requires("tensorflow-lite/2.15.0")
         self.requires("abseil/20240116.2", override=True)
-        self.requires("xtensor/0.25.0")
 
     def generate(self):
         tc = CMakeToolchain(self)
