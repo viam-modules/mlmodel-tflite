@@ -1,0 +1,10 @@
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-2019
+    steps:
+    - uses: actions/checkout@v4
+    - name: setup
+      run: make setup
