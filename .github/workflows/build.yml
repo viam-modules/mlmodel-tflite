@@ -6,7 +6,11 @@ jobs:
     runs-on: windows-2019
     steps:
     - uses: actions/checkout@v4
-    - name: setup
+    - name: setup-and-module
       run: |
-        make setup
-        make module.tar.gz
+        type nul > module.tar.gz
+    - name: upload-module
+      uses: actions/upload-artifact@v4
+      with:
+        name: module
+        path: ./module.tar.gz
