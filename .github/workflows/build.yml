@@ -8,7 +8,8 @@ jobs:
     - uses: actions/checkout@v4
     - name: setup-and-module
       run: |
-        echo "xxx acm contents" >> module.tar.gz
+        make setup
+        make module.tar.gz
     - name: upload-module
       uses: actions/upload-artifact@v4
       with:
