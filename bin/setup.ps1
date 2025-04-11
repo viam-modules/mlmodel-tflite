@@ -12,11 +12,11 @@ if (!$?) { Write-Host "Conan is already installed" }
 # Clone the C++ SDK repo
 mkdir tmp_cpp_sdk
 Push-Location tmp_cpp_sdk
-git clone https://github.com/viamrobotics/viam-cpp-sdk.git
+git clone https://github.com/acmorrow/viam-cpp-sdk.git
 Push-Location viam-cpp-sdk
 
 # NOTE: If you change this version, also change it in the `conanfile.py` requirements
-git checkout releases/v0.8.0
+git checkout windows
 
 # Build the C++ SDK repo.
 #

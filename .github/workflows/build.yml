@@ -7,4 +7,6 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: setup
-      run: make setup
+      run: |
+        make setup
+        make module.tar.gz
