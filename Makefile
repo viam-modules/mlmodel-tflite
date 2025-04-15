@@ -21,7 +21,8 @@ setup:
 
 module.tar.gz: tflite_cpu
 ifeq ($(OS),Windows_NT)
-	7z a -tgzip module.tar.gz $(BIN)
+	7z a -ttar module.tar $(BIN) meta.json
+	7z a -tgzip module.tar.gz module.tar
 else
 	tar -czvf module.tar.gz $(BIN)
 endif

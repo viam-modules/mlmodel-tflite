@@ -16,7 +16,7 @@ git clone https://github.com/acmorrow/viam-cpp-sdk.git
 Push-Location viam-cpp-sdk
 
 # NOTE: If you change this version, also change it in the `conanfile.py` requirements
-git checkout windows
+git checkout releases/v0.9.0
 
 # Build the C++ SDK repo.
 #
