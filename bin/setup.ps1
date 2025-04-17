@@ -1,4 +1,4 @@
-# Fail fastp
+# Fail fast
 $ErrorActionPreference = "Stop"
 
 # Set up conan and other friends we met along the way
@@ -23,7 +23,7 @@ git checkout releases/v0.9.0
 
 # Build the C++ SDK repo.
 #
-# We are want a static binary, so we turn of shared. Elect for C++17
+# We are want a static binary, so we turn off shared. Elect for C++17
 # compilation, since it seems some of the dependencies we pick mandate
 # it anyway. Pin to the Windows 10 1809 associated windows SDK, and
 # opt for the static compiler runtime so we don't have a dependency on
