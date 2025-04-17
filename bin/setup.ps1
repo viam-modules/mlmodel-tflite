@@ -1,11 +1,14 @@
+# Fail fastp
 $ErrorActionPreference = "Stop"
 
 # Set up conan and other friends we met along the way
 choco install -y conan cmake git 7zip jq
 
+# Ensure that things installed with choco are visible to us
 Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1
 refreshenv
 
+# Initialize conan if it hasn't been already
 conan profile detect
 if (!$?) { Write-Host "Conan is already installed" }
 
@@ -20,6 +23,12 @@ git checkout releases/v0.9.0
 
 # Build the C++ SDK repo.
 #
+# We are want a static binary, so we turn of shared. Elect for C++17
+# compilation, since it seems some of the dependencies we pick mandate
+# it anyway. Pin to the Windows 10 1809 associated windows SDK, and
+# opt for the static compiler runtime so we don't have a dependency on
+# the VC redistributable.
+#
 # TODO: Note `-tf ""`, which disables the self test. I have not been
 # able to get this working on windows.
 conan create . `
@@ -30,6 +39,7 @@ conan create . `
       -s:h compiler.runtime=static `
       -tf `"`"
 
+# Clean up
 Pop-Location  # viam-cpp-sdk
 Pop-Location  # tmp_cpp_sdk
 Remove-Item -Recurse -Force tmp_cpp_sdk
