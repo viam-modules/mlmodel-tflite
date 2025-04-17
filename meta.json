@@ -15,5 +15,5 @@
         "model": "viam:mlmodel-tflite:tflite_cpu"
       }
     ],
-    "entrypoint": "build-conan/build/Release/tflite_cpu.exe"
+    "entrypoint": "build-conan/build/Release/tflite_cpu"
 }

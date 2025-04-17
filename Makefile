@@ -1,31 +1,29 @@
 ifeq ($(OS),Windows_NT)
   BIN_EXT := .exe
-  SCRIPT_EXT := .ps1
-  SUBSHELL := powershell -ExecutionPolicy Bypass -File
+  SCRIPT_EXT := .bat
+  PATHSEP := \\
+  SUBSHELL := cmd /C
 else
   BIN_EXT :=
   SCRIPT_EXT := .sh
+  PATHSEP := /
   SUBSHELL :=
 endif
+
 BIN := build-conan/build/Release/tflite_cpu$(BIN_EXT)
 
 .PHONY: tflite_cpu
 tflite_cpu: $(BIN)
 
-$(BIN): src/*
-	$(SUBSHELL) ./bin/build$(SCRIPT_EXT)
+$(BIN): conanfile.py src/*
+	$(SUBSHELL) bin$(PATHSEP)build$(SCRIPT_EXT)
 
 .PHONY: setup
 setup:
-	$(SUBSHELL) ./bin/setup$(SCRIPT_EXT)
+	$(SUBSHELL) bin$(PATHSEP)setup$(SCRIPT_EXT)
 
-module.tar.gz: tflite_cpu
-ifeq ($(OS),Windows_NT)
-	7z a -ttar module.tar $(BIN) meta.json
-	7z a -tgzip module.tar.gz module.tar
-else
-	tar -czvf module.tar.gz $(BIN)
-endif
+module.tar.gz: $(BIN) meta.json
+	$(SUBSHELL) bin$(PATHSEP)package$(SCRIPT_EXT) $(BIN) meta.json
 
 .PHONY: lint
 lint:
