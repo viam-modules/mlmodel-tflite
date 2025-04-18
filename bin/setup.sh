@@ -16,14 +16,19 @@ git clone https://github.com/viamrobotics/viam-cpp-sdk.git
 pushd viam-cpp-sdk
 
 # NOTE: If you change this version, also change it in the `conanfile.py` requirements
-git checkout releases/v0.8.0
+git checkout releases/v0.9.0
 
 # Build the C++ SDK repo
+#
+# We want a static binary, so we turn off shared. Elect for C++17
+# compilation, since it seems some of the dependencies we pick mandate
+# it anyway.
 conan create . \
       --build=missing \
       -o "&:shared=False" \
       -s:h compiler.cppstd=17
 
+# Cleanup
 popd  # viam-cpp-sdk
 popd  # tmp_cpp_sdk
 rm -rf tmp_cpp_sdk
