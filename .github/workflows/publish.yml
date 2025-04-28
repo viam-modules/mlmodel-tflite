@@ -27,25 +27,63 @@ jobs:
             echo "Error: tag does not match semver"
             exit 1
           fi
-  publish:
+
+  build-windows:
+    name: Build for Windows
     needs: validate-tag
+    runs-on: windows-2019
+    steps:
+    - uses: actions/checkout@v4
+    - name: setup-and-module
+      run: |
+        make setup
+        make module.tar.gz
+    # As of April 2025, there isn't an obvious way to upload to the Viam module registry from
+    # Windows. So, we upload to the Github Actions artifacts, then download it on Linux to upload
+    # to the module registry.
+    - name: upload-module
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-module-${{ github.sha }}
+        path: ./module.tar.gz
+
+  publish:
+    # The order of these steps is important: first we make sure the Windows build succeeds, then we
+    # make sure all other builds succeed and get uploaded, and finally we download the Windows
+    # artifact and add that to the registry, too. In a different order, either the Windows build or
+    # any of the others could fail, resulting in some but not all the builds being uploaded to the
+    # registry. With this order, it's more likely that either all or none of them get added to the
+    # registry.
     name: Build and Upload module
+    needs: [validate-tag, build-windows]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - uses: actions/cache@v3
+      - name: Restore cached libraries
+        uses: actions/cache@v3
         with:
           path: ~/.conan2
           key: ${{runner.os}}-conan-${{ hashFiles('**/conanfile.py') }}
           restore-keys: |
             ${{ runner.os }}-conan-
 
-      - name: Build and Publish
+      - name: Build and Publish Non-Windows
         uses: viamrobotics/build-action@v1
         with:
           version: ${{ github.ref_name }}
           ref: ${{ github.sha }}
           key-id: ${{ secrets.viam_key_id }}
           key-value: ${{ secrets.viam_key_value }}
+
+      - name: Download Windows build
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-module-${{ github.sha }}
+          path: ./module.tar.gz
+
+      - name: Publish Windows build
+        run: |
+          viam login api-key --key-id ${{ secrets.viam_key_id }} --key ${{ secrets.viam_key_value }}
+          viam module upload --platform windows/amd64 --version ${{ github.ref_name }} --upload module.tar.gz
