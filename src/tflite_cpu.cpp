@@ -397,15 +397,26 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
             state->metadata.inputs.emplace_back(std::move(input_info));
         }
 
-        // As above, but for output tensors.
-        //
         // NOTE: The tflite C API docs state that information about
         // output tensors may not be available until after one round
-        // of inference. We are ignoring that guidance for now per the
-        // unknowns about how metadata will be handled in the future.
+        // of inference. We do a best effort inference on all zero
+        // inputs to try to account for this.
+        for (decltype(num_input_tensors) i = 0; i != num_input_tensors; ++i) {
+            auto* const tensor = TfLiteInterpreterGetInputTensor(state->interpreter.get(), i);
+            const auto tensor_size = TfLiteTensorByteSize(tensor);
+            const std::vector<unsigned char> zero_buffer(tensor_size, 0);
+            TfLiteTensorCopyFromBuffer(tensor, &zero_buffer[0], tensor_size);
+        }
+
+        const auto invoke_result = TfLiteInterpreterInvoke(state->interpreter.get());
+        if (invoke_result != TfLiteStatus::kTfLiteOk) {
+            // TODO: After C++ SDK 0.11.0 is released, use the new logging API.
+            std::cout << "WARNING: Inference with all zero input tensors failed: returned output tensor metadata may be unreliable" << std::endl;
+        }
+
+        // Now that we have hopefully done one round of inference, dig out the actual
+        // metadata that we will return to clients.
         auto num_output_tensors = TfLiteInterpreterGetOutputTensorCount(state->interpreter.get());
-        const auto* const output_tensor_ixes =
-            TfLiteInterpreterOutputTensorIndices(state->interpreter.get());
         for (decltype(num_output_tensors) i = 0; i != num_output_tensors; ++i) {
             const auto* const tensor =
                 TfLiteInterpreterGetOutputTensor(state->interpreter.get(), i);
