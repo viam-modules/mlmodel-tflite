@@ -32,7 +32,7 @@ jobs:
         path: ${{ env.USERPROFILE }}\.conan2
         key: ${{ runner.os }}-windows2019-conan-${{ hashFiles('**/conanfile.py') }}
         restore-keys: |
-          ${{ runner.os }}-${{ matrix.build_target.runs_on }}-conan-
+          ${{ runner.os }}-windows2019-conan-
     - name: setup-and-module
       run: |
         make setup
