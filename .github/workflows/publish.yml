@@ -58,7 +58,7 @@ jobs:
     - name: upload-module
       uses: actions/upload-artifact@v4
       with:
-        name: windows-module-${{ github.sha }}
+        name: windows-2019-module-${{ github.sha }}
         path: ./module.tar.gz
 
   build-unix:
