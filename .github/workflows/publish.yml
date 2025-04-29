@@ -28,35 +28,51 @@ jobs:
             exit 1
           fi
 
+  # If we use the viamrobotics/build-action@v1, it farms out compilation to Linux machines no
+  # matter which OS you're targeting. Furthermore, these Linux machines do not cache temporary
+  # files from one run to another. So instead, we're going to build everything on Github's action
+  # runners directly.
   build-windows:
     name: Build for Windows
     needs: validate-tag
     runs-on: windows-2019
     steps:
     - uses: actions/checkout@v4
+    - name: Restore cached libraries
+      uses: actions/cache@v3
+      with:
+        path: ${{ env.USERPROFILE }}\.conan2
+        key: ${{ runner.os }}-windows2019-conan-${{ hashFiles('**/conanfile.py') }}
+        restore-keys: |
+          ${{ runner.os }}-${{ matrix.build_target.runs_on }}-conan-
     - name: setup-and-module
       run: |
         make setup
         make module.tar.gz
     # As of April 2025, there isn't an obvious way to upload to the Viam module registry from
-    # Windows. So, we upload to the Github Actions artifacts, then download it on Linux to upload
-    # to the module registry.
+    # Windows. So, we upload to the Github Actions artifacts, then download it on Linux in a later
+    # step to upload to the module registry.
     - name: upload-module
       uses: actions/upload-artifact@v4
       with:
         name: windows-module-${{ github.sha }}
         path: ./module.tar.gz
 
-  publish:
-    # The order of these steps is important: first we make sure the Windows build succeeds, then we
-    # make sure all other builds succeed and get uploaded, and finally we download the Windows
-    # artifact and add that to the registry, too. In a different order, either the Windows build or
-    # any of the others could fail, resulting in some but not all the builds being uploaded to the
-    # registry. With this order, it's more likely that either all or none of them get added to the
-    # registry.
-    name: Build and Upload module
-    needs: [validate-tag, build-windows]
-    runs-on: ubuntu-latest
+  build-unix:
+    name: Build for Unix
+    needs: validate-tag
+    strategy:
+      matrix:
+        build_target:
+          - platform: linux/arm64
+            runs_on: ubuntu-latest
+          - platform: linux/amd64
+            runs_on: ubuntu-24.04-arm
+          - platform: darwin/arm64
+            runs_on: macos-latest
+          - platform: darwin/amd64
+            runs_on: macos-13
+    runs-on: ${{ matrix.build_target.runs_on }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -65,25 +81,47 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.conan2
-          key: ${{runner.os}}-conan-${{ hashFiles('**/conanfile.py') }}
+          key: ${{ runner.os }}-${{ matrix.build_target.runs_on }}-conan-${{ hashFiles('**/conanfile.py') }}
           restore-keys: |
-            ${{ runner.os }}-conan-
+            ${{ runner.os }}-${{ matrix.build_target.runs_on }}-conan-
+    - name: Setup and build
+      run: |
+        make setup
+        make module.tar.gz
+    - name: Store module temporarily
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.build_target.runs_on }}-module-${{ github.sha }}
+        path: ./module.tar.gz
 
-      - name: Build and Publish Non-Windows
-        uses: viamrobotics/build-action@v1
-        with:
-          version: ${{ github.ref_name }}
-          ref: ${{ github.sha }}
-          key-id: ${{ secrets.viam_key_id }}
-          key-value: ${{ secrets.viam_key_value }}
-
-      - name: Download Windows build
+  publish:
+    name: Build and Upload module
+    needs: [build-windows, build-unix]
+    strategy:
+      matrix:
+        build_target:
+          - platform: linux/arm64
+            runs_on: ubuntu-latest
+          - platform: linux/amd64
+            runs_on: ubuntu-24.04-arm
+          - platform: darwin/arm64
+            runs_on: macos-latest
+          - platform: darwin/amd64
+            runs_on: macos-13
+          - platform: windows/amd64
+            runs_on: windows-2019
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Viam CLI
+        run: |
+          sudo curl -o /usr/local/bin/viam https://storage.googleapis.com/packages.viam.com/apps/viam-cli/viam-cli-stable-linux-amd64
+          sudo chmod a+rx /usr/local/bin/viam
+      - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
-          name: windows-module-${{ github.sha }}
+          name: ${{ matrix.build_target.runs_on }}-module-${{ github.sha }}
           path: ./module.tar.gz
-
-      - name: Publish Windows build
+      - name: Publish build to Viam registry
         run: |
           viam login api-key --key-id ${{ secrets.viam_key_id }} --key ${{ secrets.viam_key_value }}
-          viam module upload --platform windows/amd64 --version ${{ github.ref_name }} --upload module.tar.gz
+          viam module upload --platform ${{ matrix.build_target.platform }} --version ${{ github.ref_name }} --upload module.tar.gz
