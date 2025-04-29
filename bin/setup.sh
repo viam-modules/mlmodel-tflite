@@ -7,8 +7,11 @@ set -euxo pipefail
 
 # In the Github Action runners, conan will fail to run b2 (the boost build executable) because the
 # version of glibcxx is too old. So, update it first.
+echo "about to update..."
 sudo apt-get update
-sudo apt-get install -y libstdc++6
+echo "done updating, about to install..."
+sudo apt-get install -y libstdc++6 g++-11
+echo "done installing, time to pip install conan"
 
 # Set up conan
 pip install conan
