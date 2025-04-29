@@ -17,27 +17,12 @@ on:
 # or [0-9]+.[0-9]+.[0-9]+-rc optionally followed by digits
 
 jobs:
-  validate-tag:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Validate tag format
-        run: |
-          TAG="${{ github.event.release.tag_name }}"
-          echo "Validating tag: $TAG"
-          if [[ $TAG =~ ^[0-9]+\.[0-9]+\.[0-9]+(-rc[0-9]*)?$ ]]; then
-            echo "Tag matches semver."
-          else
-            echo "Error: tag does not match semver"
-            exit 1
-          fi
-
   # If we use the viamrobotics/build-action@v1, it farms out compilation to Linux machines no
   # matter which OS you're targeting. Furthermore, these Linux machines do not cache temporary
   # files from one run to another. So instead, we're going to build everything on Github's action
   # runners directly.
   build-windows:
     name: Build for Windows
-    needs: validate-tag
     runs-on: windows-2019
     steps:
     - uses: actions/checkout@v4
@@ -63,7 +48,6 @@ jobs:
 
   build-unix:
     name: Build for Unix
-    needs: validate-tag
     strategy:
       matrix:
         build_target:
