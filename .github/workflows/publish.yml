@@ -87,15 +87,15 @@ jobs:
           key: ${{ runner.os }}-${{ matrix.build_target.runs_on }}-conan-${{ hashFiles('**/conanfile.py') }}
           restore-keys: |
             ${{ runner.os }}-${{ matrix.build_target.runs_on }}-conan-
-    - name: Setup and build
-      run: |
-        make setup
-        make module.tar.gz
-    - name: Store module temporarily
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ matrix.build_target.runs_on }}-module-${{ github.sha }}
-        path: ./module.tar.gz
+      - name: Setup and build
+        run: |
+          make setup
+          make module.tar.gz
+      - name: Store module temporarily
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.build_target.runs_on }}-module-${{ github.sha }}
+          path: ./module.tar.gz
 
   publish:
     name: Build and Upload module
