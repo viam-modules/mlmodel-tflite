@@ -72,9 +72,6 @@ jobs:
           name: ${{ matrix.build_target.runs_on }}-module-${{ github.sha }}
           path: ./module.tar.gz
 
-  # By making the publish step depend on both build-windows and build-linux, we don't put anything
-  # in the registry unless the module successfully built on *all* platforms: you never get stuck
-  # with a release on some but not all platforms.
   publish:
     name: Upload module
     needs: build
