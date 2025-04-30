@@ -18,9 +18,9 @@ on:
 
 jobs:
   # If we use the viamrobotics/build-action@v1, it farms out compilation to Linux machines no
-  # matter which OS you're targeting. Furthermore, these Linux machines do not cache temporary
-  # files from one run to another. So instead, we're going to build everything on Github's action
-  # runners directly.
+  # matter which OS you're targeting (which is fine for Go and Python, but not for C++).
+  # Furthermore, these Linux machines do not cache build artifacts from one run to another. So
+  # instead, we're going to build everything on Github's action runners directly.
   build-windows:
     name: Build for Windows
     runs-on: windows-2019
