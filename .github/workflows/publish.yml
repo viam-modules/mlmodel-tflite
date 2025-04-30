@@ -33,7 +33,7 @@ jobs:
   # Furthermore, these Linux machines do not cache build artifacts from one run to another. So
   # instead, we're going to build everything on Github's action runners directly.
   build:
-    name: Build for Unix
+    name: Build the module
     needs: validate-tag
     strategy:
       matrix:
