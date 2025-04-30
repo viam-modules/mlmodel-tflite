@@ -79,15 +79,15 @@ jobs:
       matrix:
         build_target:
           - platform: linux/amd64
-            runs_on: ubuntu-latest
+            built_on: ubuntu-latest
           - platform: linux/arm64
-            runs_on: ubuntu-24.04-arm
+            built_on: ubuntu-24.04-arm
           - platform: darwin/arm64
-            runs_on: macos-latest
+            built_on: macos-latest
           - platform: darwin/amd64
-            runs_on: macos-13
+            built_on: macos-13
           - platform: windows/amd64
-            runs_on: windows-2019
+            built_on: windows-2019
     runs-on: ubuntu-latest
     steps:
       - name: Install Viam CLI
@@ -97,7 +97,7 @@ jobs:
       - name: Download the build artifact
         uses: actions/download-artifact@v4
         with:
-          name: ${{ matrix.build_target.runs_on }}-module-${{ github.sha }}
+          name: ${{ matrix.build_target.built_on }}-module-${{ github.sha }}
           path: .
       - name: Publish build to Viam registry
         run: |
