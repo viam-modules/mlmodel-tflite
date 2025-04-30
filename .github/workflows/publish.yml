@@ -21,41 +21,21 @@ jobs:
   # matter which OS you're targeting (which is fine for Go and Python, but not for C++).
   # Furthermore, these Linux machines do not cache build artifacts from one run to another. So
   # instead, we're going to build everything on Github's action runners directly.
-  build-windows:
-    name: Build for Windows
-    runs-on: windows-2019
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Restore cached libraries
-        uses: actions/cache@v3
-        with:
-          path: C:\Users\runneradmin\.conan2
-          key: windows-2019-conan-${{ hashFiles('**/conanfile.py') }}
-          restore-keys: |
-            windows-2019-conan-
-      - name: Setup and build
-        run: |
-          make setup
-          make module.tar.gz
-      # As of April 2025, there isn't an obvious way to upload to the Viam module registry from
-      # Windows. So, we upload to the Github Actions artifacts, then download it on Linux in a later
-      # step to upload to the module registry.
-      - name: Store the module as a temporary artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-2019-module-${{ github.sha }}
-          path: ./module.tar.gz
-
-  build-unix:
+  build:
     name: Build for Unix
     strategy:
       matrix:
         build_target:
           - runs_on: ubuntu-latest
+            cache_dir: ~/.conan2
           - runs_on: ubuntu-24.04-arm
+            cache_dir: ~/.conan2
           - runs_on: macos-latest
+            cache_dir: ~/.conan2
           - runs_on: macos-13
+            cache_dir: ~/.conan2
+          - runs_on: windows-2019
+            cache_dir: C:\Users\runneradmin\.conan2
     runs-on: ${{ matrix.build_target.runs_on }}
     steps:
       - name: Checkout
@@ -63,7 +43,7 @@ jobs:
       - name: Restore cached libraries
         uses: actions/cache@v3
         with:
-          path: ~/.conan2
+          path: ${{ matrix.build_target.cache_dir }}
           key: ${{ matrix.build_target.runs_on }}-conan-${{ hashFiles('**/conanfile.py') }}
           restore-keys: |
             ${{ matrix.build_target.runs_on }}-conan-
@@ -71,6 +51,9 @@ jobs:
         run: |
           make setup
           make module.tar.gz
+      # As of April 2025, there isn't an obvious way to upload to the Viam module registry from
+      # Windows. So, we upload to the Github Actions artifacts, then download it on Linux in a later
+      # step to upload to the module registry.
       - name: Store the module as a temporary artifact
         uses: actions/upload-artifact@v4
         with:
@@ -82,7 +65,7 @@ jobs:
   # with a release on some but not all platforms.
   publish:
     name: Upload module
-    needs: [build-windows, build-unix]
+    needs: build
     strategy:
       matrix:
         build_target:
