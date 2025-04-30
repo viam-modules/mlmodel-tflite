@@ -42,7 +42,8 @@ conan install . `
 conan create . `
       --build=never `
       -o:a "&:shared=False" `
-      -s:a build_type=RelWithDebInfo `
+      -s:a build_type=Release `
+      -s:a "&:build_type=RelWithDebInfo" `
       -s:a compiler.cppstd=17 `
       -c:a tools.microsoft:winsdk_version=10.0.17763.0 `
       -s:a compiler.runtime=static `
