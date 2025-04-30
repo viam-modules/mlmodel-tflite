@@ -17,7 +17,7 @@ else
   SUBSHELL :=
 endif
 
-BIN := build-conan/build/Release/tflite_cpu$(BIN_EXT)
+BIN := build-conan/build/RelWithDebInfo/tflite_cpu$(BIN_EXT)
 
 .PHONY: tflite_cpu
 tflite_cpu: $(BIN)

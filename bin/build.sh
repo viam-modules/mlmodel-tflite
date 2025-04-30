@@ -16,5 +16,6 @@ rm -rf build-conan
 conan build . \
       --output-folder=build-conan \
       --build=missing \
-      -o "&:shared=False" \
-      -s:h compiler.cppstd=17
+      -o:a "&:shared=False" \
+      -s:a build_type=RelWithDebInfo \
+      -s:a compiler.cppstd=17

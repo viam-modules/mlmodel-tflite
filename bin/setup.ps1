@@ -33,10 +33,11 @@ git checkout releases/v0.9.0
 # able to get this working on windows.
 conan create . `
       --build=missing `
-      -o "&:shared=False" `
-      -s:h compiler.cppstd=17 `
-      -c:h tools.microsoft:winsdk_version=10.0.17763.0 `
-      -s:h compiler.runtime=static `
+      -o:a "&:shared=False" `
+      -s:a build_type=RelWithDebInfo `
+      -s:a compiler.cppstd=17 `
+      -c:a tools.microsoft:winsdk_version=10.0.17763.0 `
+      -s:a compiler.runtime=static `
       -tf `"`"
 
 # Clean up
