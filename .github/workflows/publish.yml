@@ -29,7 +29,7 @@ jobs:
     - name: Restore cached libraries
       uses: actions/cache@v3
       with:
-        path: ${{ env.USERPROFILE }}\.conan2
+        path: C:\Users\runneradmin\.conan2
         key: ${{ runner.os }}-windows2019-conan-${{ hashFiles('**/conanfile.py') }}
         restore-keys: |
           ${{ runner.os }}-windows2019-conan-
