@@ -30,7 +30,7 @@ conan install . \
       -s:a compiler.cppstd=17
 
 conan create . \
-      --build=never \
+      --build=missing:viam-cpp-sdk \
       -o:a "&:shared=False" \
       -s:a build_type=Release \
       -s:a "&:build_type=RelWithDebInfo" \

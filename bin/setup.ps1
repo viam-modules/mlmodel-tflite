@@ -40,7 +40,7 @@ conan install . `
 # TODO: Note `-tf ""`, which disables the self test. I have not been
 # able to get this working on windows.
 conan create . `
-      --build=never `
+      --build=missing:viam-cpp-sdk `
       -o:a "&:shared=False" `
       -s:a build_type=Release `
       -s:a "&:build_type=RelWithDebInfo" `

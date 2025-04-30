@@ -22,7 +22,7 @@ conan install . \
 
 conan build . \
       --output-folder=build-conan \
-      --build=never \
+      --build=missing:mlmodel-tflite \
       -o:a "&:shared=False" \
       -s:a build_type=Release \
       -s:a "&:build_type=RelWithDebInfo" \
