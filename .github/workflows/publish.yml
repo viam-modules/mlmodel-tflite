@@ -25,7 +25,8 @@ jobs:
     name: Build for Windows
     runs-on: windows-2019
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout
+      uses: actions/checkout@v4
     - name: Restore cached libraries
       uses: actions/cache@v3
       with:
@@ -33,14 +34,14 @@ jobs:
         key: ${{ runner.os }}-windows2019-conan-${{ hashFiles('**/conanfile.py') }}
         restore-keys: |
           ${{ runner.os }}-windows2019-conan-
-    - name: setup-and-module
+    - name: Setup and build
       run: |
         make setup
         make module.tar.gz
     # As of April 2025, there isn't an obvious way to upload to the Viam module registry from
     # Windows. So, we upload to the Github Actions artifacts, then download it on Linux in a later
     # step to upload to the module registry.
-    - name: upload-module
+    - name: Store the module as a temporary artifact
       uses: actions/upload-artifact@v4
       with:
         name: windows-2019-module-${{ github.sha }}
@@ -59,7 +60,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Restore cached libraries
         uses: actions/cache@v3
         with:
@@ -71,14 +71,14 @@ jobs:
         run: |
           make setup
           make module.tar.gz
-      - name: Store module temporarily
+      - name: Store the module as a temporary artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.build_target.runs_on }}-module-${{ github.sha }}
           path: ./module.tar.gz
 
   publish:
-    name: Build and Upload module
+    name: Upload module
     needs: [build-windows, build-unix]
     strategy:
       matrix:
@@ -99,7 +99,7 @@ jobs:
         run: |
           sudo curl -o /usr/local/bin/viam https://storage.googleapis.com/packages.viam.com/apps/viam-cli/viam-cli-stable-linux-amd64
           sudo chmod a+rx /usr/local/bin/viam
-      - name: Download build artifact
+      - name: Download the build artifact
         uses: actions/download-artifact@v4
         with:
           name: ${{ matrix.build_target.runs_on }}-module-${{ github.sha }}
