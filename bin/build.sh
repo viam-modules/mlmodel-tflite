@@ -13,9 +13,16 @@ rm -rf build-conan
 # We want a static binary, so we turn off shared. Elect for C++17
 # compilation, since it seems some of the dependencies we pick mandate
 # it anyway.
+
+conan install . \
+      --build=missing \
+      -o:a "&:shared=False" \
+      -s:a build_type=Release \
+      -s:a compiler.cppstd=17
+
 conan build . \
       --output-folder=build-conan \
-      --build=missing \
+      --build=never \
       -o:a "&:shared=False" \
       -s:a build_type=RelWithDebInfo \
       -s:a compiler.cppstd=17

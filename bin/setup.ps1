@@ -29,10 +29,18 @@ git checkout releases/v0.9.0
 # opt for the static compiler runtime so we don't have a dependency on
 # the VC redistributable.
 #
+conan install . `
+      --build=missing `
+      -o:a "&:shared=False" `
+      -s:a build_type=Release `
+      -s:a compiler.cppstd=17 `
+      -c:a tools.microsoft:winsdk_version=10.0.17763.0 `
+      -s:a compiler.runtime=static
+
 # TODO: Note `-tf ""`, which disables the self test. I have not been
 # able to get this working on windows.
 conan create . `
-      --build=missing `
+      --build=never `
       -o:a "&:shared=False" `
       -s:a build_type=RelWithDebInfo `
       -s:a compiler.cppstd=17 `
