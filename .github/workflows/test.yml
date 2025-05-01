@@ -29,11 +29,11 @@ jobs:
           restore-keys: |
             ${{ matrix.build_target.runs_on }}-conan-
 
-      - name: Run lint
-        run: make lint
-
       - name: Install dependencies
         run: make setup
+
+      - name: Run lint
+        run: make lint
 
       - name: Build
         run: make tflite_cpu
