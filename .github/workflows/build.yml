@@ -1,0 +1,40 @@
+name: Build the current implementation without deploying
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build the module
+    strategy:
+      matrix:
+        build_target:
+          - runs_on: ubuntu-22.04
+            cache_dir: ~/.conan2
+          - runs_on: ubuntu-22.04-arm
+            cache_dir: ~/.conan2
+          - runs_on: macos-14
+            cache_dir: ~/.conan2
+          - runs_on: macos-13
+            cache_dir: ~/.conan2
+          - runs_on: windows-2019
+            cache_dir: C:\Users\runneradmin\.conan2
+    runs-on: ${{ matrix.build_target.runs_on }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Restore cached libraries
+        uses: actions/cache@v3
+        with:
+          path: ${{ matrix.build_target.cache_dir }}
+          key: ${{ matrix.build_target.runs_on }}-conan-${{ hashFiles('**/conanfile.py') }}
+          restore-keys: |
+            ${{ matrix.build_target.runs_on }}-conan-
+      - name: Setup and build
+        run: |
+          make setup
+          make module.tar.gz
+      - name: Store the module as a temporary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.build_target.runs_on }}-module-${{ github.sha }}
+          path: ./module.tar.gz
