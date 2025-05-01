@@ -32,8 +32,7 @@ conan install . \
 conan create . \
       --build=never \
       -o:a "&:shared=False" \
-      -s:a build_type=Release \
-      -s:a "&:build_type=RelWithDebInfo" \
+      -s:a build_type=RelWithDebInfo \
       -s:a compiler.cppstd=17
 
 # Cleanup
