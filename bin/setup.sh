@@ -6,7 +6,7 @@
 set -euxo pipefail
 
 # Set up conan
-pip install conan
+conan --version > /dev/null 2>&1 || python -m pip install conan
 conan profile detect || echo "Conan is already installed"
 
 # Clone the C++ SDK repo
@@ -25,8 +25,9 @@ git checkout releases/v0.9.0
 # it anyway.
 conan create . \
       --build=missing \
-      -o "&:shared=False" \
-      -s:h compiler.cppstd=17
+      -o:a "&:shared=False" \
+      -s:a build_type=Release \
+      -s:a compiler.cppstd=17
 
 # Cleanup
 popd  # viam-cpp-sdk
