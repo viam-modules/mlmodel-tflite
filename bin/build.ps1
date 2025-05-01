@@ -15,18 +15,9 @@ Remove-Item -Recurse -Force build-conan -ErrorAction SilentlyContinue
 # it anyway. Pin to the Windows 10 1809 associated windows SDK, and
 # opt for the static compiler runtime so we don't have a dependency on
 # the VC redistributable.
-
-conan install . `
-      --build=missing `
-      -o:a "&:shared=False" `
-      -s:a build_type=Release `
-      -s:a compiler.cppstd=17 `
-      -c:a tools.microsoft:winsdk_version=10.0.17763.0 `
-      -s:a compiler.runtime=static
-
 conan build . `
       --output-folder=build-conan `
-      --build=never `
+      --build=missing `
       -o:a "&:shared=False" `
       -s:a build_type=RelWithDebInfo `
       -s:a compiler.cppstd=17 `
