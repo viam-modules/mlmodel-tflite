@@ -22,15 +22,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run lint
-        run: make lint
-
       - uses: actions/cache@v3
         with:
           path: ~/.conan2
           key: ${{ matrix.build_target.runs_on }}-conan-${{ hashFiles('**/conanfile.py') }}
           restore-keys: |
             ${{ matrix.build_target.runs_on }}-conan-
+
+      - name: Run lint
+        run: make lint
 
       - name: Install dependencies
         run: make setup
