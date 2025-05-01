@@ -2,6 +2,7 @@ name: Build & publish module to registry
 on:
   release:
     types: [published]
+  workflow_dispatch:
 
 # This regex matches either a semver (e.g. 1.2.3)
 # or a release candidate in one of these forms:
