@@ -34,7 +34,7 @@ git checkout releases/v0.9.0
 conan create . `
       --build=missing `
       -o:a "&:shared=False" `
-      -s:a build_type=RelWithDebInfo `
+      -s:a build_type=Release `
       -s:a compiler.cppstd=17 `
       -c:a tools.microsoft:winsdk_version=10.0.17763.0 `
       -s:a compiler.runtime=static `
