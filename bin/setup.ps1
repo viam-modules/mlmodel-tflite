@@ -2,7 +2,7 @@
 $ErrorActionPreference = "Stop"
 
 # Set up conan and other friends we met along the way
-choco install -y conan cmake git 7zip jq
+choco install -y conan cmake git 7zip
 
 # Ensure that things installed with choco are visible to us
 Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1
