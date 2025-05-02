@@ -10,16 +10,10 @@ jobs:
   build:
     strategy:
       matrix:
-        build_target:
-          -runs_on: |
-            ubuntu-22.04
-            ubuntu-22.04-arm
-            macos-14
-            macos-13
-            # TODO(RSDK-10636): run the build on Windows, too, when it's is tolerably fast
-            #-runs_on: windows-2019
+        # TODO(RSDK-10636): run the build on windows-2019, too, when it's is tolerably fast
+        runs_on: [ubuntu-22.04, ubuntu-22.04-arm, macos-14, macos-13]
     name: "Lint and build"
-    runs-on: ${{ matrix.build_target.runs_on }}
+    runs-on: ${{ matrix.runs_on }}
 
     steps:
       - uses: actions/checkout@v4
