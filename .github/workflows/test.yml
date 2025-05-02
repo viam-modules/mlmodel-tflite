@@ -11,10 +11,11 @@ jobs:
     strategy:
       matrix:
         build_target:
-          -runs_on: ubuntu-22.04
-          -runs_on: ubuntu-22.04-arm
-          -runs_on: macos-14
-          -runs_on: macos-13
+          -runs_on: |
+            ubuntu-22.04
+            ubuntu-22.04-arm
+            macos-14
+            macos-13
             # TODO(RSDK-10636): run the build on Windows, too, when it's is tolerably fast
             #-runs_on: windows-2019
     name: "Lint and build"
