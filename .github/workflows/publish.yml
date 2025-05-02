@@ -94,6 +94,9 @@ jobs:
         run: |
           sudo curl -o /usr/local/bin/viam https://storage.googleapis.com/packages.viam.com/apps/viam-cli/viam-cli-stable-linux-amd64
           sudo chmod a+rx /usr/local/bin/viam
+      # Although we don't need to check out any of the code, we do need to check out meta.json.
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Download the build artifact
         uses: actions/download-artifact@v4
         with:
