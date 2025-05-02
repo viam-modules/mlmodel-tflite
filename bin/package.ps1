@@ -13,6 +13,9 @@ jq -f .\bin\fixup_windows_entrypoint.jq meta.json.backup | Out-File -FilePath me
 7z a -ttar module.tar $args
 7z a -tgzip -sdel module.tar.gz module.tar
 
-# Clean house
-Remove-Item meta.json
+# Clean house. Keep the updated meta.json, which is needed for uploading the module from Github.
+if (Test-Path "meta.windows.json") {
+    Remove-Item "meta.windows.json"
+}
+Move-Item meta.json meta.windows.json
 Move-Item meta.json.backup meta.json
