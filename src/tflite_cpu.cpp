@@ -19,6 +19,8 @@
 #include <stdexcept>
 
 #include <tensorflow/lite/c/c_api.h>
+#include <tensorflow/lite/interpreter_builder.h>
+#include <tensorflow/lite/kernels/register.h>
 
 #include <viam/sdk/common/instance.hpp>
 #include <viam/sdk/common/proto_value.hpp>
@@ -106,7 +108,7 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
             // Get the first (and only) input tensor index
             int tensor_index = state_->input_tensor_indices_by_name.begin()->second;
 
-            auto* const tensor = TfLiteInterpreterGetInputTensor(state_->interpreter.get(), tensor_index);
+            auto* const tensor = state_->interpreter->tensor(tensor_index);
             if (!tensor) {
                 std::ostringstream buffer;
                 buffer << service_name
@@ -144,8 +146,7 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
                            << " is not a known input tensor name for the model";
                     throw std::invalid_argument(buffer.str());
                 }
-                auto* const tensor =
-                    TfLiteInterpreterGetInputTensor(state_->interpreter.get(), where->second);
+                auto* const tensor = state_->interpreter->tensor(where->second);
                 if (!tensor) {
                     std::ostringstream buffer;
                     buffer << service_name << ": Failed to obtain tflite input tensor for `" << kv.first
@@ -167,8 +168,7 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
         }
 
         // Invoke the interpreter and return any failure information.
-        const auto tflite_status = TfLiteInterpreterInvoke(state_->interpreter.get());
-        if (tflite_status != TfLiteStatus::kTfLiteOk) {
+        if (state_->interpreter->Invoke() != TfLiteStatus::kTfLiteOk) {
             std::ostringstream buffer;
             buffer << service_name
                    << ": interpreter invocation failed: " << state_->interpreter_error_data;
@@ -202,8 +202,7 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
             if (where == state_->output_tensor_indices_by_name.end()) {
                 continue;  // Should be impossible
             }
-            const auto* const tflite_tensor =
-                TfLiteInterpreterGetOutputTensor(state_->interpreter.get(), where->second);
+            const auto* const tflite_tensor = state_->interpreter->tensor(where->second);
             inference_result->views.emplace(output.name,
                                             std::move(make_tensor_view_(output, tflite_tensor)));
         }
@@ -303,28 +302,20 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
         model_path_contents_stream << in.rdbuf();
         state->model_data = std::move(model_path_contents_stream.str());
 
-        // Create an error reporter so that we can extract detailed
-        // error information from TFLite when things go wrong. The
-        // error state is protected by the interpreter lock.
-        state->model.reset(TfLiteModelCreateWithErrorReporter(
-            state->model_data.data(),
-            state->model_data.size(),
-            [](void* ud, const char* fmt, va_list args) {
-                char buffer[4096];
-                static_cast<void>(vsnprintf(buffer, sizeof(buffer), fmt, args));
-                *reinterpret_cast<std::string*>(ud) = buffer;
-            },
-            &state->interpreter_error_data));
+        state->model = tflite::impl::FlatBufferModel::BuildFromBuffer(
+            &state->model_data[0],
+            std::distance(cbegin(state->model_data), cend(state->model_data)), state.get());
 
-        // If we failed to create the model, return an error and
-        // include the error data that tflite wrote to the error
-        // reporter state.
         if (!state->model) {
             std::ostringstream buffer;
             buffer << service_name << ": Failed to load model from file `" << model_path_string
                    << "`: " << state->interpreter_error_data;
             throw std::invalid_argument(buffer.str());
         }
+
+        // Create an InterpreterBuilder so we can set the number of threads.
+        tflite::ops::builtin::BuiltinOpResolver resolver;
+        tflite::impl::InterpreterBuilder builder(*state->model, resolver);
 
         // If present, extract and validate the number of threads to
         // use in the interpreter and create an interpreter options
@@ -334,7 +325,7 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
             const auto* num_threads_double = num_threads->second.get<double>();
             if (!num_threads_double || !std::isnormal(*num_threads_double) ||
                 (*num_threads_double < 0) ||
-                (*num_threads_double >= std::numeric_limits<std::int32_t>::max()) ||
+                (*num_threads_double >= std::numeric_limits<int>::max()) ||
                 (std::trunc(*num_threads_double) != *num_threads_double)) {
                 std::ostringstream buffer;
                 buffer << service_name
@@ -342,16 +333,15 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
                        << *num_threads_double;
                 throw std::invalid_argument(buffer.str());
             }
-
-            state->interpreter_options.reset(TfLiteInterpreterOptionsCreate());
-            TfLiteInterpreterOptionsSetNumThreads(state->interpreter_options.get(),
-                                                  static_cast<int32_t>(*num_threads_double));
+            if (builder.SetNumThreads(static_cast<int>(*num_threads_double)) != kTfLiteOk) {
+                std::ostringstream buffer;
+                buffer << service_name
+                    << ": Failed to set number of threads in interpreter builder: " << state->interpreter_error_data;
+                throw std::invalid_argument(buffer.str());
+            }
         }
 
-        // Build the single interpreter.
-        state->interpreter.reset(
-            TfLiteInterpreterCreate(state->model.get(), state->interpreter_options.get()));
-        if (!state->interpreter) {
+        if (builder(&state->interpreter) != kTfLiteOk) {
             std::ostringstream buffer;
             buffer << service_name
                    << ": Failed to create tflite interpreter: " << state->interpreter_error_data;
@@ -359,8 +349,7 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
         }
 
         // Have the interpreter allocate tensors for the model
-        auto tfresult = TfLiteInterpreterAllocateTensors(state->interpreter.get());
-        if (tfresult != kTfLiteOk) {
+        if (state->interpreter->AllocateTensors() != kTfLiteOk) {
             std::ostringstream buffer;
             buffer << service_name << ": Failed to allocate tensors for tflite interpreter: "
                    << state->interpreter_error_data;
@@ -372,9 +361,9 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
         // dimensions. Apply any tensor renamings per our
         // configuration. Stash the relevant data in our `metadata`
         // fields.
-        auto num_input_tensors = TfLiteInterpreterGetInputTensorCount(state->interpreter.get());
-        for (decltype(num_input_tensors) i = 0; i != num_input_tensors; ++i) {
-            const auto* const tensor = TfLiteInterpreterGetInputTensor(state->interpreter.get(), i);
+        const auto input_tensor_indices = state->interpreter->inputs();
+        for (auto input_tensor_index : input_tensor_indices) {
+            const auto* const tensor = state->interpreter->tensor(input_tensor_index);
 
             auto ndims = TfLiteTensorNumDims(tensor);
             if (ndims == -1) {
@@ -393,7 +382,7 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
             for (decltype(ndims) j = 0; j != ndims; ++j) {
                 input_info.shape.push_back(TfLiteTensorDim(tensor, j));
             }
-            state->input_tensor_indices_by_name[input_info.name] = i;
+            state->input_tensor_indices_by_name[input_info.name] = input_tensor_index;
             state->metadata.inputs.emplace_back(std::move(input_info));
         }
 
@@ -401,25 +390,23 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
         // output tensors may not be available until after one round
         // of inference. We do a best effort inference on all zero
         // inputs to try to account for this.
-        for (decltype(num_input_tensors) i = 0; i != num_input_tensors; ++i) {
-            auto* const tensor = TfLiteInterpreterGetInputTensor(state->interpreter.get(), i);
+        for (auto input_tensor_index : input_tensor_indices) {
+            auto* const tensor = state->interpreter->tensor(input_tensor_index);
             const auto tensor_size = TfLiteTensorByteSize(tensor);
             const std::vector<unsigned char> zero_buffer(tensor_size, 0);
             TfLiteTensorCopyFromBuffer(tensor, &zero_buffer[0], tensor_size);
         }
 
-        const auto invoke_result = TfLiteInterpreterInvoke(state->interpreter.get());
-        if (invoke_result != TfLiteStatus::kTfLiteOk) {
+        if (state->interpreter->Invoke() != TfLiteStatus::kTfLiteOk) {
             // TODO: After C++ SDK 0.11.0 is released, use the new logging API.
             std::cout << "WARNING: Inference with all zero input tensors failed: returned output tensor metadata may be unreliable" << std::endl;
         }
 
         // Now that we have hopefully done one round of inference, dig out the actual
         // metadata that we will return to clients.
-        auto num_output_tensors = TfLiteInterpreterGetOutputTensorCount(state->interpreter.get());
-        for (decltype(num_output_tensors) i = 0; i != num_output_tensors; ++i) {
-            const auto* const tensor =
-                TfLiteInterpreterGetOutputTensor(state->interpreter.get(), i);
+        const auto output_tensor_indices = state->interpreter->outputs();
+        for (auto output_tensor_index : output_tensor_indices) {
+          const auto* const tensor = state->interpreter->tensor(output_tensor_index);
 
             auto ndims = TfLiteTensorNumDims(tensor);
             if (ndims == -1) {
@@ -441,7 +428,7 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
             if (state->label_path != "") {
                 output_info.extra.insert({"labels", state->label_path});
             }
-            state->output_tensor_indices_by_name[output_info.name] = i;
+            state->output_tensor_indices_by_name[output_info.name] = output_tensor_index;
             state->metadata.outputs.emplace_back(std::move(output_info));
         }
 
@@ -494,9 +481,16 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
     // All of the meaningful internal state of the service is held in
     // a separate state object to help ensure clean replacement of our
     // internals during reconfiguration.
-    struct state_ {
+    struct state_ final : public tflite::ErrorReporter {
         explicit state_(vsdk::Dependencies dependencies, vsdk::ResourceConfig configuration)
             : dependencies(std::move(dependencies)), configuration(std::move(configuration)) {}
+
+        int Report(const char *format, va_list args) override {
+            char buffer[4096];
+            static_cast<void>(vsnprintf(buffer, sizeof(buffer), format, args));
+            interpreter_error_data = buffer;
+            return 0;
+        }
 
         // The dependencies and configuration we were given at
         // construction / reconfiguration.
@@ -506,16 +500,7 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
         // This data must outlive any interpreters created from the
         // model we build against model data.
         std::string model_data;
-
-        // Technically, we don't need to keep the model after we create an interpreter,
-        // but it may be useful to do so in case we ever want to pool interpreters.
-        std::unique_ptr<TfLiteModel, decltype(&TfLiteModelDelete)> model{nullptr,
-                                                                         &TfLiteModelDelete};
-
-        // Similarly, keep the options we built around for potential
-        // re-use.
-        std::unique_ptr<TfLiteInterpreterOptions, decltype(&TfLiteInterpreterOptionsDelete)>
-            interpreter_options{nullptr, &TfLiteInterpreterOptionsDelete};
+        std::unique_ptr<tflite::impl::FlatBufferModel> model;
 
         // Metadata about input and output tensors that was extracted
         // during configuration. Callers need this in order to know
@@ -531,12 +516,11 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
         std::unordered_map<std::string, int> input_tensor_indices_by_name;
         std::unordered_map<std::string, int> output_tensor_indices_by_name;
 
-        // The configured error reporter will overwrite this string.
+        // The `Report` method will overwrite this string.
         std::string interpreter_error_data;
 
         // The interpreter itself.
-        std::unique_ptr<TfLiteInterpreter, decltype(&TfLiteInterpreterDelete)> interpreter{
-            nullptr, &TfLiteInterpreterDelete};
+        std::unique_ptr<tflite::impl::Interpreter> interpreter;
     };
 
     // A visitor that can populate a TFLiteTensor given a MLModelService::tensor_view.
