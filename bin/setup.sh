@@ -6,7 +6,7 @@
 set -euxo pipefail
 
 # Set up conan
-conan --version > /dev/null 2>&1 || python -m pip install conan
+conan --version > /dev/null 2>&1 || python3 -m pip install conan
 conan profile detect || echo "Conan is already installed"
 
 # Clone the C++ SDK repo
