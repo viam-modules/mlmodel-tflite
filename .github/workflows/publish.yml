@@ -40,8 +40,6 @@ jobs:
         build_target:
           - runs_on: ubuntu-22.04
             cache_dir: ~/.conan2
-          - runs_on: ubuntu-22.04-arm
-            cache_dir: ~/.conan2
           - runs_on: macos-14
             cache_dir: ~/.conan2
           - runs_on: macos-13
@@ -72,12 +70,12 @@ jobs:
           name: ${{ matrix.build_target.runs_on }}-module-${{ github.sha }}
           path: module.tar.gz
 
-  # Raspberry Pi 4 runs Debian Bullseye, which uses an outdated version of glibc. Make a special
-  # build just for that.
+  # Raspberry Pi 4 runs Debian Bullseye, which uses an outdated version of glibc. Make the
+  # linux/arm64 build compatible with that.
   rpi4build:
     name: Build for Debian Bullseye (rpi4)
     needs: validate-tag
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -106,16 +104,13 @@ jobs:
           - platform: linux/amd64
             built_on: ubuntu-22.04
           - platform: linux/arm64
-            built_on: ubuntu-22.04-arm
+            built_on: debian-bullseye
           - platform: darwin/arm64
             built_on: macos-14
           - platform: darwin/amd64
             built_on: macos-13
           - platform: windows/amd64
             built_on: windows-2019
-          - platform: linux/arm64
-            built_on: debian-bullseye
-            registry_tags: codename:bullseye
     runs-on: ubuntu-latest
     steps:
       - name: Install Viam CLI
@@ -133,4 +128,4 @@ jobs:
       - name: Publish build to Viam registry
         run: |
           viam login api-key --key-id ${{ secrets.viam_key_id }} --key ${{ secrets.viam_key_value }}
-          viam module upload --platform ${{ matrix.build_target.platform }} --version ${{ github.ref_name }} --upload module.tar.gz --tags ${{ matrix.build_target.registry_tags }}
+          viam module upload --platform ${{ matrix.build_target.platform }} --version ${{ github.ref_name }} --upload module.tar.gz
