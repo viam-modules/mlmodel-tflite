@@ -90,7 +90,7 @@ jobs:
             debian-bullseye-conan-
       # We do everything in a docker container running the same OS as rpi4.
       - name: Setup and build
-        run: docker run -v .:/repo -v ~/.conan2:/root/.conan2 debian:bullseye bash -c 'cd /repo && apt update && apt install -y cmake git make python3 python3-pip && make setup && make module.tar.gz'
+        run: docker run -v .:/repo -v ~/.conan2:/root/.conan2 debian:bullseye bash -c 'cd /repo && apt update && apt install -y cmake curl git make python && curl "https://bootstrap.pypa.io/pip/2.7/get-pip.py" --output get-pip.py && python get-pip.py && make setup && make module.tar.gz'
       - name: Store the module as a temporary artifact
         uses: actions/upload-artifact@v4
         with:
