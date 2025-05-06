@@ -1,7 +1,9 @@
 name: Build & publish module to registry
 on:
-  release:
-    types: [published]
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 # This regex matches either a semver (e.g. 1.2.3)
 # or a release candidate in one of these forms:
@@ -14,19 +16,19 @@ on:
 # or [0-9]+.[0-9]+.[0-9]+-rc optionally followed by digits
 
 jobs:
-  validate-tag:
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Validate tag format
-        run: |
-          TAG="${{ github.event.release.tag_name }}"
-          echo "Validating tag: $TAG"
-          if [[ $TAG =~ ^[0-9]+\.[0-9]+\.[0-9]+(-rc[0-9]*)?$ ]]; then
-            echo "Tag matches semver."
-          else
-            echo "Error: tag does not match semver"
-            exit 1
-          fi
+  #  validate-tag:
+  #    runs-on: ubuntu-22.04
+  #    steps:
+  #      - name: Validate tag format
+  #        run: |
+  #          TAG="${{ github.event.release.tag_name }}"
+  #          echo "Validating tag: $TAG"
+  #          if [[ $TAG =~ ^[0-9]+\.[0-9]+\.[0-9]+(-rc[0-9]*)?$ ]]; then
+  #            echo "Tag matches semver."
+  #          else
+  #            echo "Error: tag does not match semver"
+  #            exit 1
+  #          fi
 
   # If we use the viamrobotics/build-action@v1, it farms out compilation to Linux machines no
   # matter which OS you're targeting (which is fine for Go and Python, but not for C++).
@@ -34,7 +36,7 @@ jobs:
   # instead, we're going to build everything on Github's action runners directly.
   build:
     name: Build the module
-    needs: validate-tag
+    #needs: validate-tag
     strategy:
       matrix:
         build_target:
@@ -74,7 +76,7 @@ jobs:
   # linux/arm64 build compatible with that.
   rpi4build:
     name: Build for Debian Bullseye (rpi4)
-    needs: validate-tag
+    #needs: validate-tag
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -127,5 +129,6 @@ jobs:
           path: .
       - name: Publish build to Viam registry
         run: |
-          viam login api-key --key-id ${{ secrets.viam_key_id }} --key ${{ secrets.viam_key_value }}
-          viam module upload --platform ${{ matrix.build_target.platform }} --version ${{ github.ref_name }} --upload module.tar.gz
+          ls -la
+          #viam login api-key --key-id ${{ secrets.viam_key_id }} --key ${{ secrets.viam_key_value }}
+          #viam module upload --platform ${{ matrix.build_target.platform }} --version ${{ github.ref_name }} --upload module.tar.gz
