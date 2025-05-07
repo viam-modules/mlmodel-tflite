@@ -12,7 +12,7 @@ jobs:
       matrix:
         # TODO(RSDK-10636): run the build on windows-2019, too, when it's is tolerably fast
         runs_on: [ubuntu-22.04, ubuntu-22.04-arm, macos-14, macos-13]
-    name: "Lint and build"
+    name: "Lint and build on each platform"
     runs-on: ${{ matrix.runs_on }}
 
     steps:
@@ -33,3 +33,17 @@ jobs:
 
       - name: Build
         run: make tflite_cpu
+
+  # PRs should only be mergeable when all platforms can build the code. Instead of having 1
+  # requirement in the Github settings for each platform, have 1 rule that depends on every item
+  # from the previous matrix, and have the Github check gate on this one.
+  allow:
+    name: "Lint and build"
+    needs: build
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check whether all builds completed
+        run: |
+          echo "Results of builds: ${{ needs.build.result }}"
+          [ "${{ needs.build.result }}" == "success" ]
