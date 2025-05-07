@@ -43,5 +43,7 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - name: Check if all builds completed
-        run: [ "${{ needs.build.result }}" == "success" ]
+      - name: Check whether all builds completed
+        run: |
+          echo "Results of builds: ${{ needs.build.result }}"
+          [ "${{ needs.build.result }}" == "success" ]
