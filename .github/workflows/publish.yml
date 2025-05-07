@@ -93,7 +93,7 @@ jobs:
       # So, install python3, and then make a copy of it called just python. Don't care if we mess
       # up /bin: the entire container is going to be thrown out anyway.
       - name: Setup and build
-        run: docker run -v .:/repo -v ~/.conan2:/root/.conan2 debian:bullseye bash -c 'cd /repo && apt update && apt upgrade -y && apt install -y cmake curl git libstdc++6 make python3 python3-pip && cp $(which python3) /bin/python && conan install -r conancenter --update --tool-requires=b2/5.3.1 --build=b2 && make setup && make module.tar.gz'
+        run: docker run -v .:/repo -v ~/.conan2:/root/.conan2 debian:bullseye bash -c 'cd /repo/bin && ./build_bullseye.sh'
       - name: Store the module as a temporary artifact
         uses: actions/upload-artifact@v4
         with:
