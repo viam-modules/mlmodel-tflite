@@ -88,10 +88,7 @@ jobs:
           key: debian-bullseye-conan-${{ hashFiles('**/conanfile.py') }}
           restore-keys: |
             debian-bullseye-conan-
-      # We do everything in a docker container running the same OS as rpi4. Debian Bullseye is old
-      # enough that the default python interpreter is Python2, but we're using Python3 features.
-      # So, install python3, and then make a copy of it called just python. Don't care if we mess
-      # up /bin: the entire container is going to be thrown out anyway.
+      # We do everything in a docker container running the same OS as rpi4.
       - name: Setup and build
         run: docker run -v .:/repo -v ~/.conan2:/root/.conan2 debian:bullseye bash -c 'cd /repo/bin && ./build_bullseye.sh'
       - name: Store the module as a temporary artifact
