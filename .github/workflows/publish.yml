@@ -81,7 +81,7 @@ jobs:
   # compatible version, rather than the most specific (as of May 2025, but we're hoping to change
   # that).
   bullseye:
-    name: Pin the old Go code for Debian Bullseye
+    name: Upload the old Go code again for Debian Bullseye
     needs: build
     runs-on: ubuntu-latest
     steps:
