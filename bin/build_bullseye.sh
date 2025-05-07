@@ -30,7 +30,7 @@ pushd cmake
 # This is the version used in Ubuntu 24.04 as of May 2025.
 wget https://github.com/Kitware/CMake/releases/download/v3.30.2/cmake-3.30.2.tar.gz
 tar xzvf cmake-3.30.2.tar.gz
-cd cmake-3.30.2
+pushd cmake-3.30.2
 ./bootstrap
 make
 make install
@@ -45,6 +45,8 @@ conan profile detect
 conan install -r conancenter --update --tool-requires=b2/5.3.1 --build=b2/5.3.1 -s compiler.cppstd=14 -s:a compiler.cppstd=14
 
 # Finally, build everything!
+pwd
+ls -la
 make setup
 make module.tar.gz
 
