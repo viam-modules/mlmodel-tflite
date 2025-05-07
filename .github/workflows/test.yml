@@ -40,7 +40,8 @@ jobs:
   allow:
     name: "Lint and build"
     needs: build
+    if: always()
     runs-on: ubuntu-latest
     steps:
-      - name: All done
-        run: echo "all done"
+      - name: Check if all builds completed
+        run: [ "${{ needs.build.result }}" == "success" ]
