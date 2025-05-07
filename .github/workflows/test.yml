@@ -35,7 +35,7 @@ jobs:
         run: make tflite_cpu
 
   # PRs should only be mergeable when all platforms can build the code. Instead of having 1
-  # requirement for each platform in the Github settings, have 1 rule that depends on every item
+  # requirement in the Github settings for each platform, have 1 rule that depends on every item
   # from the previous matrix, and have the Github check gate on this one.
   allow:
     name: "Lint and build"
