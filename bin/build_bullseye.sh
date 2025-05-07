@@ -26,6 +26,7 @@ cp $(which python3) /bin/python
 # glibcxx than is available on Debian Bullseye. So, instead, build it ourselves. and that means
 # installing conan before we get to the setup script.
 python -m pip install conan
+conan profile detect
 conan install -r conancenter --update --tool-requires=b2/5.3.1 --build=b2/5.3.1 -s compiler.cppstd=14 -s:a compiler.cppstd=14
 
 # Finally, build everything!
