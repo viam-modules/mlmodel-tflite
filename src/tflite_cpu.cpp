@@ -98,72 +98,43 @@ class MLModelServiceTFLite : public vsdk::MLModelService,
         std::unique_lock<std::mutex> lock(state_lock_);
         check_stopped_inlock_();
 
-        // Special case: if the model has only one input tensor and only one tensor is provided,
-        // use it regardless of name
-        if (state_->input_tensor_indices_by_name.size() == 1 && inputs.size() == 1) {
-            const auto& input_pair = *inputs.begin();
-            const auto& tensor_name = input_pair.first;
-            const auto& tensor_view = input_pair.second;
+        // Ensure that enough inputs were provided.
+        if (inputs.size() < state_->input_tensor_indices_by_name.size()) {
+            std::ostringstream buffer;
+            buffer << service_name
+                   << ": Too few inputs provided for inference: " << state_->input_tensor_indices_by_name.size()
+                   << " expected, but got " << inputs.size() << " instead";
+            throw std::invalid_argument(buffer.str());
+        }
 
-            // Get the first (and only) input tensor index
-            int tensor_index = state_->input_tensor_indices_by_name.begin()->second;
-
-            auto* const tensor = state_->interpreter->tensor(tensor_index);
+        // Walk the inputs, and copy the data from each of the input
+        // tensor views we were given into the associated tflite input
+        // tensor buffer.
+        for (const auto& kv : inputs) {
+            const auto where = state_->input_tensor_indices_by_name.find(kv.first);
+            if (where == state_->input_tensor_indices_by_name.end()) {
+                std::ostringstream buffer;
+                buffer << service_name << ": Tensor name `" << kv.first << "`"
+                       << " is not a known input tensor name for the model";
+                throw std::invalid_argument(buffer.str());
+            }
+            auto* const tensor = state_->interpreter->tensor(where->second);
             if (!tensor) {
                 std::ostringstream buffer;
-                buffer << service_name
-                       << ": Failed to obtain tflite input tensor for `" << tensor_name << "`, the only input";
+                buffer << service_name << ": Failed to obtain tflite input tensor for `" << kv.first
+                       << "` (index " << where->second << ")";
                 throw std::invalid_argument(buffer.str());
             }
 
             const auto tflite_status =
-                boost::apply_visitor(write_to_tflite_tensor_visitor_(&tensor_name, tensor), tensor_view);
+                boost::apply_visitor(write_to_tflite_tensor_visitor_(&kv.first, tensor), kv.second);
 
             if (tflite_status != TfLiteStatus::kTfLiteOk) {
                 std::ostringstream buffer;
                 buffer << service_name
-                       << ": input tensor `" << tensor_name << "` failed population: "
-                       << state_->interpreter_error_data;
+                       << ": input tensor `" << kv.first
+                       << "` failed population: " << state_->interpreter_error_data;
                 throw std::invalid_argument(buffer.str());
-            }
-        } else {
-            // Ensure that enough inputs were provided.
-            if (inputs.size() < state_->input_tensor_indices_by_name.size()) {
-                std::ostringstream buffer;
-                buffer << service_name
-                       << ": Too few inputs provided for inference: " << state_->input_tensor_indices_by_name.size()
-                       << " expected, but got " << inputs.size() << " instead";
-                throw std::invalid_argument(buffer.str());
-            }
-            // Walk the inputs, and copy the data from each of the input
-            // tensor views we were given into the associated tflite input
-            // tensor buffer.
-            for (const auto& kv : inputs) {
-                const auto where = state_->input_tensor_indices_by_name.find(kv.first);
-                if (where == state_->input_tensor_indices_by_name.end()) {
-                    std::ostringstream buffer;
-                    buffer << service_name << ": Tensor name `" << kv.first << "`"
-                           << " is not a known input tensor name for the model";
-                    throw std::invalid_argument(buffer.str());
-                }
-                auto* const tensor = state_->interpreter->tensor(where->second);
-                if (!tensor) {
-                    std::ostringstream buffer;
-                    buffer << service_name << ": Failed to obtain tflite input tensor for `" << kv.first
-                           << "` (index " << where->second << ")";
-                    throw std::invalid_argument(buffer.str());
-                }
-
-                const auto tflite_status =
-                    boost::apply_visitor(write_to_tflite_tensor_visitor_(&kv.first, tensor), kv.second);
-
-                if (tflite_status != TfLiteStatus::kTfLiteOk) {
-                    std::ostringstream buffer;
-                    buffer << service_name
-                           << ": input tensor `" << kv.first
-                           << "` failed population: " << state_->interpreter_error_data;
-                    throw std::invalid_argument(buffer.str());
-                }
             }
         }
 
