@@ -16,7 +16,7 @@ git clone https://github.com/viamrobotics/viam-cpp-sdk.git
 pushd viam-cpp-sdk
 
 # NOTE: If you change this version, also change it in the `conanfile.py` requirements
-git checkout releases/v0.9.0
+git checkout releases/v0.13.0
 
 # Build the C++ SDK repo
 #
