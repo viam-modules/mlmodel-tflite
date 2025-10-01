@@ -16,7 +16,7 @@ jobs:
             cache_dir: ~/.conan2
           - runs_on: macos-13
             cache_dir: ~/.conan2
-          - runs_on: windows-2019
+          - runs_on: windows-2022
             cache_dir: C:\Users\runneradmin\.conan2
     runs-on: ${{ matrix.build_target.runs_on }}
     steps:
