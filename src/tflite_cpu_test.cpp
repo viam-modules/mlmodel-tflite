@@ -1,0 +1,43 @@
+#define BOOST_TEST_MODULE test module tflite_cpu_test
+
+#include <tflite_cpu.hpp>
+
+#include <boost/test/included/unit_test.hpp>
+
+// TODO figure out how to run these tests - look at makefile exmaples in other repos
+
+BOOST_AUTO_TEST_SUITE(tflite_cpu_tests)
+
+BOOST_AUTO_TEST_CASE(configure_)
+{
+    // tests that empty dependencies/config variables result in an error
+    BOOST_CHECK_EXCEPTION(configure_(vsdk::Dependencies{}, {}), invalid_argument, (const invalid_argument &ex) {
+            BOOST_CHECK(ex.what().contains("model_path"));
+            return true; });
+
+    // correct config
+    BOOST_CHECK_NO_THROW(configure_(vsdk::Dependencies{}, {{"model_path", "/path/to/test_files/model.tflite"}}));
+
+    // incorrect path in config
+    BOOST_CHECK_THROW(configure_(vsdk::Dependencies{}, {{"model_path", "/path/to/test_files/model.onnx"}}), invalid_argument);
+}
+
+BOOST_AUTO_TEST_CASE(MLModelServiceTFLite)
+{
+    // empty config
+    BOOST_CHECK_THROW(MLModelServiceTFLite(vsdk::Dependencies{}, {}), invalid_argument);
+
+    // test CPU detector
+    MLModelServiceTFLite tflite = MLModelServiceTFLite(vsdk::Dependencies{}, {{"model_path", "vision/tflite/effdet0.tflite"}, {"num_threads", 2}});
+    MlModelService service = tflite.MlModelService;
+    // test that the model is not nil
+    BOOST_CHECK_NE(service, null);
+    // check that config is not null
+    BOOST_CHECK_NE(tflite.state_.configuration, null);
+    // check that metadata is not null
+    BOOST_CHECK_NE(tflite.state_.metadata, null);
+    BOOST_CHECK_NE(tflite.metadata(), null);
+    // metadata tests
+    MLModelService::metadata metadata = tflite.metdata();
+    BOOST_CHECK_EQUAL(metadata.Inputs[0].Name, images);
+}
