@@ -42,13 +42,13 @@ add_executable(tflite_cpu
   src/tflite_cpu.cpp
 )
 
-add_executable(tflite_cpu_test src/tflite_cpu_test.cpp)
-
 target_link_libraries(tflite_cpu
   PRIVATE Threads::Threads
   PRIVATE viam-cpp-sdk::viamsdk
   PRIVATE tensorflow::tensorflowlite
 )
+
+add_executable(tflite_cpu_test src/tflite_cpu_test.cpp)
 
 target_link_libraries(tflite_cpu_test
   PRIVATE Boost::boost
@@ -56,5 +56,4 @@ target_link_libraries(tflite_cpu_test
 
 install(
   TARGETS tflite_cpu
-  TARGETS tflite_cpu_test
 )

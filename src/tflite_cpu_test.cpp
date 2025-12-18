@@ -2,7 +2,7 @@
 
 #include <tflite_cpu.hpp>
 
-#include <boost/test/included/unit_test.hpp>
+#include <boost/test/unit_test.hpp>
 
 // TODO figure out how to run these tests - look at makefile exmaples in other repos
 
@@ -39,5 +39,11 @@ BOOST_AUTO_TEST_CASE(MLModelServiceTFLite)
     BOOST_CHECK_NE(tflite.metadata(), null);
     // metadata tests
     MLModelService::metadata metadata = tflite.metdata();
-    BOOST_CHECK_EQUAL(metadata.Inputs[0].Name, images);
+    BOOST_CHECK_EQUAL(metadata.Inputs[0].Name, "images");
+    BOOST_CHECK_EQUAL(metadata.Outputs[0].Name, "location");
+    BOOST_CHECK_EQUAL(metadata.Outputs[1].Name, "category");
+    BOOST_CHECK_EQUAL(metadata.Outputs[2].Name, "score");
+    BOOST_CHECK_EQUAL(metadata.Inputs[0].DataType, "uint8");
+    BOOST_CHECK_EQUAL(metadata.Outputs[0].DataType, "float32");
+    BOOST_CHECK_EQUAL(metadata.Outputs[1].AssociatedFiles[0].Name, "labelmap.txt");
 }
