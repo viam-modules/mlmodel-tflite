@@ -38,6 +38,11 @@ find_package(Threads REQUIRED)
 find_package(viam-cpp-sdk REQUIRED)
 find_package(tensorflowlite REQUIRED)
 
+find_package(Boost CONFIG REQUIRED
+  COMPONENTS
+    headers
+)
+
 add_executable(tflite_cpu
   src/tflite_cpu.cpp
 )
@@ -50,8 +55,18 @@ target_link_libraries(tflite_cpu
 
 add_executable(tflite_cpu_test src/tflite_cpu_test.cpp)
 
+# Tell boost::dll to use std::filesystem rather than boost::filesystem.
+target_compile_definitions(tflite_cpu_test
+  PRIVATE
+    BOOST_DLL_USE_STD_FS
+)
+
 target_link_libraries(tflite_cpu_test
   PRIVATE Boost::boost
+  PRIVATE Boost::unit_test_framework
+  PRIVATE Threads::Threads
+  PRIVATE viam-cpp-sdk::viamsdk
+  PRIVATE tensorflow::tensorflowlite
 )
 
 install(

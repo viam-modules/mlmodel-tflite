@@ -312,9 +312,8 @@ namespace
                 throw std::invalid_argument(buffer.str());
             }
 
-        // Create an InterpreterBuilder so we can set the number of threads.
-        tflite:
-            ps::builtin::BuiltinOpResolver resolver;
+            // Create an InterpreterBuilder so we can set the number of threads.
+            tflite::ops::builtin::BuiltinOpResolver resolver;
             tflite::impl::InterpreterBuilder builder(*state->model, resolver);
 
             // If present, extract and validate the number of threads to
