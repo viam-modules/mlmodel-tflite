@@ -31,7 +31,7 @@ BOOST_AUTO_TEST_CASE(configure_)
 // BOOST_AUTO_TEST_CASE(MLModelServiceTFLite)
 // {
 //     // empty config
-//     BOOST_CHECK_THROW(MLModelServiceTFLite(vsdk::Dependencies{}, {}), invalid_argument);
+//     BOOST_CHECK_THROW(new MLModelServiceTFLite(vsdk::Dependencies{}, {}), invalid_argument);
 
 //     // test CPU detector
 //     MLModelServiceTFLite tflite = MLModelServiceTFLite(vsdk::Dependencies{}, {{"model_path", "vision/tflite/effdet0.tflite"}, {"num_threads", 2}});
@@ -57,6 +57,10 @@ BOOST_AUTO_TEST_CASE(configure_)
 //     Mat img = imread("vision/tflite/dogscute.jpeg")
 //     // resize??
 //     // convert image to bytes
+
+// test the infer method here for tflite - not sure how to get the inputs
+// TODO figure out what ML package i should use in C++
+// tflite.infer()
 // }
 
 BOOST_AUTO_TEST_SUITE_END()
