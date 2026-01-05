@@ -14,9 +14,9 @@ public:
     static std::unique_ptr<struct state_> configure_(viam::sdk::Dependencies dependencies,
                                                      viam::sdk::ResourceConfig configuration);
 
-~MLModelServiceTFLite() final
+    ~MLModelServiceTFLite() final;
 
-    void stop(const vsdk::ProtoStruct &extra) noexcept final
+void stop(const vsdk::ProtoStruct &extra) noexcept final
 
     void stop() noexcept
 

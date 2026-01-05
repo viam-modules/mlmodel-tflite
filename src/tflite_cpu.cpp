@@ -34,7 +34,7 @@
 #include <viam/sdk/rpc/server.hpp>
 #include <viam/sdk/services/mlmodel.hpp>
 
-#include tflite_cpu.hpp
+#include "tflite_cpu.hpp"
 
 namespace
 {

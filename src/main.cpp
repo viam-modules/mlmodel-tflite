@@ -5,7 +5,7 @@
 #include <viam/sdk/module/service.hpp>
 #include <viam/sdk/registry/registry.hpp>
 // TODO import tflite_cpu library
-#include tflite_cpu.hpp
+#include <tflite_cpu.hpp>
 
 namespace
 {
