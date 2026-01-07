@@ -35,3 +35,23 @@
 #include <viam/sdk/services/mlmodel.hpp>
 
 #include "tflite_cpu.hpp"
+
+namespace mlmodel_tflite
+{
+
+    MLModelServiceTFLite::~MLModelServiceTFLite()
+    {
+        // All invocations arrive via gRPC, so we know we are idle
+        // here. It should be safe to tear down all state
+        // automatically without needing to wait for anything more to
+        // drain.
+    }
+
+    void MLModelServiceTFLite::stop(const mlmodel_tflite::vsdk::ProtoStruct &extra) noexcept
+    {
+        return stop();
+    }
+
+    ////////
+
+}

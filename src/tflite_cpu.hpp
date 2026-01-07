@@ -49,18 +49,9 @@ namespace mlmodel_tflite
             : MLModelService(configuration.name()),
               state_(configure_(std::move(dependencies), std::move(configuration))) {}
 
-        ~MLModelServiceTFLite() final
-        {
-            // All invocations arrive via gRPC, so we know we are idle
-            // here. It should be safe to tear down all state
-            // automatically without needing to wait for anything more to
-            // drain.
-        }
+        ~MLModelServiceTFLite() final;
 
-        void stop(const mlmodel_tflite::vsdk::ProtoStruct &extra) noexcept final
-        {
-            return stop();
-        }
+        void stop(const mlmodel_tflite::vsdk::ProtoStruct &extra) noexcept final;
 
         /// @brief Stops the MLModelServiceTFLite from running.
         void stop() noexcept
@@ -545,7 +536,7 @@ namespace mlmodel_tflite
         {
         public:
             write_to_tflite_tensor_visitor_(const std::string *name, TfLiteTensor *tflite_tensor)
-                : name_(name), tflite_tensor_(tflite_tensor) {}
+                : name_(name), tflite_tensor_(tflite_tensor) {};
 
             template <typename T>
             TfLiteStatus operator()(const T &mlmodel_tensor) const
