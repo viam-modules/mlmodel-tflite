@@ -15,27 +15,27 @@ namespace
     {
         // Every Viam C++ SDK program must have one and only one Instance object which is created before
         // any other C++ SDK objects and stays alive until all Viam C++ SDK objects are destroyed.
-        vsdk::Instance inst;
+        mlmodel_tflite::vsdk::Instance inst;
 
         // Create a new model registration for the service.
-        auto module_registration = std::make_shared<vsdk::ModelRegistration>(
+        auto module_registration = std::make_shared<mlmodel_tflite::vsdk::ModelRegistration>(
             // Identify that this resource offers the MLModelService API
-            vsdk::API::get<vsdk::MLModelService>(),
+            mlmodel_tflite::vsdk::API::get<mlmodel_tflite::vsdk::MLModelService>(),
 
             // Declare a model triple for this service.
-            vsdk::Model{"viam", "mlmodel-tflite", "tflite_cpu"},
+            mlmodel_tflite::vsdk::Model{"viam", "mlmodel-tflite", "tflite_cpu"},
 
             // Define the factory for instances of the resource.
-            [](vsdk::Dependencies deps, vsdk::ResourceConfig config)
+            [](mlmodel_tflite::vsdk::Dependencies deps, mlmodel_tflite::vsdk::ResourceConfig config)
             {
-                return std::make_shared<MLModelServiceTFLite>(std::move(deps), std::move(config));
+                return std::make_shared<mlmodel_tflite::MLModelServiceTFLite>(std::move(deps), std::move(config));
             });
 
         // Register the newly created registration with the Registry.
-        vsdk::Registry::get().register_model(module_registration);
+        mlmodel_tflite::vsdk::Registry::get().register_model(module_registration);
 
         // Construct the module service and tell it where to place the socket path.
-        auto module_service = std::make_shared<vsdk::ModuleService>(socket_path);
+        auto module_service = std::make_shared<mlmodel_tflite::vsdk::ModuleService>(socket_path);
 
         // Add the server as providing the API and model declared in the
         // registration.

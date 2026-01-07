@@ -20,7 +20,7 @@
 #include <viam/sdk/rpc/server.hpp>
 #include <viam/sdk/services/mlmodel.hpp>
 
-namespace
+namespace mlmodel_tflite
 {
 
     namespace vsdk = ::viam::sdk;
@@ -37,15 +37,15 @@ namespace
     //   -- `label_path`:  An absolute filesystem path to a .txt file of the model's category labels.
     //
     // Any additional configuration fields are ignored.
-    class MLModelServiceTFLite : public vsdk::MLModelService,
-                                 public vsdk::Stoppable,
-                                 public vsdk::Reconfigurable
+    class MLModelServiceTFLite : public mlmodel_tflite::vsdk::MLModelService,
+                                 public mlmodel_tflite::vsdk::Stoppable,
+                                 public mlmodel_tflite::vsdk::Reconfigurable
     {
         class write_to_tflite_tensor_visitor_;
 
     public:
-        explicit MLModelServiceTFLite(vsdk::Dependencies dependencies,
-                                      vsdk::ResourceConfig configuration)
+        explicit MLModelServiceTFLite(mlmodel_tflite::vsdk::Dependencies dependencies,
+                                      mlmodel_tflite::vsdk::ResourceConfig configuration)
             : MLModelService(configuration.name()),
               state_(configure_(std::move(dependencies), std::move(configuration))) {}
 
@@ -57,7 +57,7 @@ namespace
             // drain.
         }
 
-        void stop(const vsdk::ProtoStruct &extra) noexcept final
+        void stop(const mlmodel_tflite::vsdk::ProtoStruct &extra) noexcept final
         {
             return stop();
         }
@@ -69,8 +69,8 @@ namespace
             state_.reset();
         }
 
-        void reconfigure(const vsdk::Dependencies &dependencies,
-                         const vsdk::ResourceConfig &configuration) final
+        void reconfigure(const mlmodel_tflite::vsdk::Dependencies &dependencies,
+                         const mlmodel_tflite::vsdk::ResourceConfig &configuration) final
         {
             const std::unique_lock<std::shared_mutex> state_wlock(state_rwmutex_);
             check_stopped_inlock_();
@@ -79,7 +79,7 @@ namespace
         }
 
         std::shared_ptr<named_tensor_views> infer(const named_tensor_views &inputs,
-                                                  const vsdk::ProtoStruct &extra) final
+                                                  const mlmodel_tflite::vsdk::ProtoStruct &extra) final
         {
 
             // We need to lock state so we are protected against reconfiguration, but
@@ -198,7 +198,7 @@ namespace
             return {std::move(inference_result), views};
         }
 
-        struct metadata metadata(const vsdk::ProtoStruct &extra) final
+        struct metadata metadata(const mlmodel_tflite::vsdk::ProtoStruct &extra) final
         {
             // Just return a copy of our metadata from leased state.
             const std::shared_lock<std::shared_mutex> state_rlock(state_rwmutex_);
@@ -219,8 +219,8 @@ namespace
             }
         }
 
-        static std::unique_ptr<struct state_> configure_(vsdk::Dependencies dependencies,
-                                                         vsdk::ResourceConfig configuration)
+        static std::unique_ptr<struct state_> configure_(mlmodel_tflite::vsdk::Dependencies dependencies,
+                                                         mlmodel_tflite::vsdk::ResourceConfig configuration)
         {
 
             auto state =
@@ -495,7 +495,7 @@ namespace
         // internals during reconfiguration.
         struct state_ final : public tflite::ErrorReporter
         {
-            explicit state_(vsdk::Dependencies dependencies, vsdk::ResourceConfig configuration)
+            explicit state_(mlmodel_tflite::vsdk::Dependencies dependencies, mlmodel_tflite::vsdk::ResourceConfig configuration)
                 : dependencies(std::move(dependencies)), configuration(std::move(configuration)) {}
 
             int Report(const char *format, va_list args) override
@@ -508,8 +508,8 @@ namespace
 
             // The dependencies and configuration we were given at
             // construction / reconfiguration.
-            vsdk::Dependencies dependencies;
-            vsdk::ResourceConfig configuration;
+            mlmodel_tflite::vsdk::Dependencies dependencies;
+            mlmodel_tflite::vsdk::ResourceConfig configuration;
 
             // This data must outlive any interpreters created from the
             // model we build against model data.

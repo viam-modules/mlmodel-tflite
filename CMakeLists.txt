@@ -40,10 +40,6 @@ find_package(tensorflowlite REQUIRED)
 
 add_library(tflite_cpu_library src/tflite_cpu.cpp)
 
-add_executable(tflite_cpu
-  src/tflite_cpu.cpp
-)
-
 add_executable(main
   src/main.cpp
 )
@@ -56,10 +52,10 @@ target_link_libraries(tflite_cpu_library
   PUBLIC tensorflow::tensorflowlite
 )
 
-target_link_libraries(tflite_cpu
-  PRIVATE tflite_cpu_library
-)
+# target_link_libraries(tflite_cpu
+#   PRIVATE tflite_cpu_library
+# )
 
-install(
-  TARGETS tflite_cpu
-)
+# install(
+#   TARGETS tflite_cpu
+# )
