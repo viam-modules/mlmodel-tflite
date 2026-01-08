@@ -86,116 +86,19 @@ namespace mlmodel_tflite
                 : name_(name), tflite_tensor_(tflite_tensor) {};
 
             template <typename T>
-            TfLiteStatus operator()(const T &mlmodel_tensor) const
-            {
-                const auto expected_size = TfLiteTensorByteSize(tflite_tensor_);
-                const auto *const mlmodel_data_begin =
-                    reinterpret_cast<const unsigned char *>(mlmodel_tensor.data());
-                const auto *const mlmodel_data_end = reinterpret_cast<const unsigned char *>(
-                    mlmodel_tensor.data() + mlmodel_tensor.size());
-                const auto mlmodel_data_size =
-                    static_cast<size_t>(mlmodel_data_end - mlmodel_data_begin);
-                if (expected_size != mlmodel_data_size)
-                {
-                    std::ostringstream buffer;
-                    buffer << service_name << ": tensor `" << *name_
-                           << "` was expected to have byte size " << expected_size << " but "
-                           << mlmodel_data_size << " bytes were provided";
-                    throw std::invalid_argument(buffer.str());
-                }
-                return TfLiteTensorCopyFromBuffer(tflite_tensor_, mlmodel_data_begin, expected_size);
-            }
+            TfLiteStatus operator()(const T &mlmodel_tensor) const;
 
         private:
             const std::string *name_;
             TfLiteTensor *tflite_tensor_;
         };
 
-        // Creates a tensor_view which views a tflite tensor buffer. It dispatches on the
-        // type and delegates to the templated version below.
         MLModelService::tensor_views make_tensor_view_(const MLModelService::tensor_info &info,
-                                                       const TfLiteTensor *const tflite_tensor)
-        {
-            const auto tflite_tensor_type = TfLiteTensorType(tflite_tensor);
-            switch (tflite_tensor_type)
-            {
-            case kTfLiteInt8:
-            {
-                return make_tensor_view_t_<std::int8_t>(info, tflite_tensor);
-            }
-            case kTfLiteUInt8:
-            {
-                return make_tensor_view_t_<std::uint8_t>(info, tflite_tensor);
-            }
-            case kTfLiteInt16:
-            {
-                return make_tensor_view_t_<std::int16_t>(info, tflite_tensor);
-            }
-            case kTfLiteUInt16:
-            {
-                return make_tensor_view_t_<std::uint16_t>(info, tflite_tensor);
-            }
-            case kTfLiteInt32:
-            {
-                return make_tensor_view_t_<std::int32_t>(info, tflite_tensor);
-            }
-            case kTfLiteUInt32:
-            {
-                return make_tensor_view_t_<std::uint32_t>(info, tflite_tensor);
-            }
-            case kTfLiteInt64:
-            {
-                return make_tensor_view_t_<std::int64_t>(info, tflite_tensor);
-            }
-            case kTfLiteUInt64:
-            {
-                return make_tensor_view_t_<std::uint64_t>(info, tflite_tensor);
-            }
-            case kTfLiteFloat32:
-            {
-                return make_tensor_view_t_<float>(info, tflite_tensor);
-            }
-            case kTfLiteFloat64:
-            {
-                return make_tensor_view_t_<double>(info, tflite_tensor);
-            }
-            default:
-            {
-                std::ostringstream buffer;
-                buffer << service_name
-                       << ": Model returned unsupported tflite data type: " << tflite_tensor_type;
-                throw std::invalid_argument(buffer.str());
-            }
-            }
-        }
+                                                       const TfLiteTensor *const tflite_tensor);
 
-        // The type specific version of the above function, it just
-        // reinterpret_casts the tensor buffer into an MLModelService
-        // tensor view and applies the necessary shape info.
         template <typename T>
         MLModelService::tensor_views make_tensor_view_t_(const MLModelService::tensor_info &info,
-                                                         const TfLiteTensor *const tflite_tensor)
-        {
-            const auto *const tensor_data = reinterpret_cast<const T *>(TfLiteTensorData(tflite_tensor));
-            const auto tensor_size_bytes = TfLiteTensorByteSize(tflite_tensor);
-            const auto tensor_size_t = tensor_size_bytes / sizeof(T);
-            // TODO: We are just feeding back out what we cached in the
-            // metadata for shape. Should this instead be re-querying the
-            // output tensor NumDims / DimN after each invocation in case
-            // the shape is dynamic? The possibility of a dynamically
-            // sized extent is why we represent the dimensions as signed
-            // quantities in the tensor metadata. But an actual tensor has
-            // a real extent. How would tflite ever communicate that to us
-            // differently given that we use the same API to obtain
-            // metadata as we would here?
-            std::vector<std::size_t> shape;
-            shape.reserve(info.shape.size());
-            for (const auto s : info.shape)
-            {
-                shape.push_back(static_cast<std::size_t>(s));
-            }
-            return MLModelService::make_tensor_view(tensor_data, tensor_size_t, std::move(shape));
-        }
+                                                         const TfLiteTensor *const tflite_tensor);
 
         // Accesss to the module state is serialized. All configuration
         // state is held in the `state` type to make it easier to destroy
