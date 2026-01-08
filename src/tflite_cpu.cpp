@@ -243,6 +243,14 @@ namespace mlmodel_tflite
         return {std::move(inference_result), views};
     }
 
+    struct MLModelServiceTFLite::metadata MLModelServiceTFLite::metadata(const vsdk::ProtoStruct &extra)
+    {
+        // Just return a copy of our metadata from leased state.
+        const std::shared_lock<std::shared_mutex> state_rlock(state_rwmutex_);
+        check_stopped_inlock_();
+        return state_->metadata;
+    }
+
     // struct state_;
 
     void MLModelServiceTFLite::check_stopped_inlock_() const
@@ -526,43 +534,32 @@ namespace mlmodel_tflite
         }
     }
 
-    // All of the meaningful internal state of the service is held in
-    // a separate state object to help ensure clean replacement of our
-    // internals during reconfiguration.
-    // struct state_ final : public tflite::ErrorReporter;
+    /* MLModelServiceTFLite::write_to_tflite_tensor_visitor_::write_to_tflite_tensor_visitor_(const std::string *name, TfLiteTensor *tflite_tensor)
+        : name_(name), tflite_tensor_(tflite_tensor) {}; */
 
-    // A visitor that can populate a TFLiteTensor given a MLModelService::tensor_view.
-    class MLModelServiceTFLite::write_to_tflite_tensor_visitor_ : public boost::static_visitor<TfLiteStatus>
+    template <typename T>
+    TfLiteStatus MLModelServiceTFLite::write_to_tflite_tensor_visitor_::operator()(const T &mlmodel_tensor) const
     {
-    public:
-        MLModelServiceTFLite::write_to_tflite_tensor_visitor_(const std::string *name, TfLiteTensor *tflite_tensor)
-            : name_(name), tflite_tensor_(tflite_tensor) {};
-
-        template <typename T>
-        TfLiteStatus MLModelServiceTFLite::operator()(const T &mlmodel_tensor) const
+        const auto expected_size = TfLiteTensorByteSize(tflite_tensor_);
+        const auto *const mlmodel_data_begin =
+            reinterpret_cast<const unsigned char *>(mlmodel_tensor.data());
+        const auto *const mlmodel_data_end = reinterpret_cast<const unsigned char *>(
+            mlmodel_tensor.data() + mlmodel_tensor.size());
+        const auto mlmodel_data_size =
+            static_cast<size_t>(mlmodel_data_end - mlmodel_data_begin);
+        if (expected_size != mlmodel_data_size)
         {
-            const auto expected_size = TfLiteTensorByteSize(tflite_tensor_);
-            const auto *const mlmodel_data_begin =
-                reinterpret_cast<const unsigned char *>(mlmodel_tensor.data());
-            const auto *const mlmodel_data_end = reinterpret_cast<const unsigned char *>(
-                mlmodel_tensor.data() + mlmodel_tensor.size());
-            const auto mlmodel_data_size =
-                static_cast<size_t>(mlmodel_data_end - mlmodel_data_begin);
-            if (expected_size != mlmodel_data_size)
-            {
-                std::ostringstream buffer;
-                buffer << service_name << ": tensor `" << *name_
-                       << "` was expected to have byte size " << expected_size << " but "
-                       << mlmodel_data_size << " bytes were provided";
-                throw std::invalid_argument(buffer.str());
-            }
-            return TfLiteTensorCopyFromBuffer(tflite_tensor_, mlmodel_data_begin, expected_size);
+            std::ostringstream buffer;
+            buffer << service_name << ": tensor `" << *name_
+                   << "` was expected to have byte size " << expected_size << " but "
+                   << mlmodel_data_size << " bytes were provided";
+            throw std::invalid_argument(buffer.str());
         }
+        return TfLiteTensorCopyFromBuffer(tflite_tensor_, mlmodel_data_begin, expected_size);
+    }
 
-    private:
-        const std::string *name_;
-        TfLiteTensor *tflite_tensor_;
-    };
+    const std::string *name_;
+    TfLiteTensor *tflite_tensor_;
 
     // Creates a tensor_view which views a tflite tensor buffer. It dispatches on the
     // type and delegates to the templated version below.

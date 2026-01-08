@@ -62,6 +62,8 @@ namespace mlmodel_tflite
         std::shared_ptr<named_tensor_views> infer(const named_tensor_views &inputs,
                                                   const mlmodel_tflite::vsdk::ProtoStruct &extra) final;
 
+        struct metadata metadata(const vsdk::ProtoStruct &extra) final;
+
     private:
         struct state_;
 
