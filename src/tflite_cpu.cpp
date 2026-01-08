@@ -39,10 +39,60 @@
 namespace mlmodel_tflite
 {
 
-    explicit MLModelServiceTFLite::MLModelServiceTFLite(mlmodel_tflite::vsdk::Dependencies dependencies,
+    // All of the meaningful internal state of the service is held in
+    // a separate state object to help ensure clean replacement of our
+    // internals during reconfiguration.
+    struct MLModelServiceTFLite::state_ final : public tflite::ErrorReporter
+    {
+        explicit state_(mlmodel_tflite::vsdk::Dependencies dependencies, mlmodel_tflite::vsdk::ResourceConfig configuration)
+            : dependencies(std::move(dependencies)), configuration(std::move(configuration)) {}
+
+        int Report(const char *format, va_list args) override
+        {
+            char buffer[4096];
+            static_cast<void>(vsnprintf(buffer, sizeof(buffer), format, args));
+            interpreter_error_data = buffer;
+            return 0;
+        }
+
+        // The dependencies and configuration we were given at
+        // construction / reconfiguration.
+        mlmodel_tflite::vsdk::Dependencies dependencies;
+        mlmodel_tflite::vsdk::ResourceConfig configuration;
+
+        // This data must outlive any interpreters created from the
+        // model we build against model data.
+        std::string model_data;
+        std::unique_ptr<tflite::impl::FlatBufferModel> model;
+
+        // Metadata about input and output tensors that was extracted
+        // during configuration. Callers need this in order to know
+        // how to interact with the service.
+        struct MLModelService::metadata metadata;
+
+        //  The label path is a file that relates the outputs of the label tensor ints to strings
+        std::string label_path;
+
+        // Maps from string names of tensors to the numeric
+        // value. Note that the keys here are the renamed tensors, if
+        // applicable.
+        std::unordered_map<std::string, int> input_tensor_indices_by_name;
+        std::unordered_map<std::string, int> output_tensor_indices_by_name;
+
+        // Protects interpreter_error_data and interpreter
+        std::mutex interpreter_mutex;
+
+        // The `Report` method will overwrite this string.
+        std::string interpreter_error_data;
+
+        // The interpreter itself.
+        std::unique_ptr<tflite::impl::Interpreter> interpreter;
+    };
+
+    /* explicit MLModelServiceTFLite::MLModelServiceTFLite(mlmodel_tflite::vsdk::Dependencies dependencies,
                                                         mlmodel_tflite::vsdk::ResourceConfig configuration)
         : MLModelService(configuration.name()),
-          state_(configure_(std::move(dependencies), std::move(configuration))) {}
+          state_(configure_(std::move(dependencies), std::move(configuration))) {} */
 
     MLModelServiceTFLite::~MLModelServiceTFLite()
     {
@@ -73,8 +123,8 @@ namespace mlmodel_tflite
         state_ = configure_(dependencies, configuration);
     }
 
-    std::shared_ptr<named_tensor_views> MLModelServiceTFLite::infer(const named_tensor_views &inputs,
-                                                                    const mlmodel_tflite::vsdk::ProtoStruct &extra)
+    std::shared_ptr<MLModelServiceTFLite::named_tensor_views> MLModelServiceTFLite::infer(const named_tensor_views &inputs,
+                                                                                          const mlmodel_tflite::vsdk::ProtoStruct &extra)
     {
 
         // We need to lock state so we are protected against reconfiguration, but
@@ -193,7 +243,7 @@ namespace mlmodel_tflite
         return {std::move(inference_result), views};
     }
 
-    struct state_;
+    // struct state_;
 
     void MLModelServiceTFLite::check_stopped_inlock_() const
     {
@@ -422,7 +472,7 @@ namespace mlmodel_tflite
 
     // Converts from tflites type enumeration into the model service
     // type enumeration or throws if there is no such conversion.
-    MLModelService::tensor_info::data_types MLModelServiceTFLite::service_data_type_from_tflite_data_type_(
+    MLModelServiceTFLite::MLModelService::tensor_info::data_types MLModelServiceTFLite::service_data_type_from_tflite_data_type_(
         TfLiteType type)
     {
         switch (type)
@@ -475,56 +525,6 @@ namespace mlmodel_tflite
         }
         }
     }
-
-    // All of the meaningful internal state of the service is held in
-    // a separate state object to help ensure clean replacement of our
-    // internals during reconfiguration.
-    struct MLModelServiceTFLite::state_ final : public tflite::ErrorReporter
-    {
-        explicit state_(mlmodel_tflite::vsdk::Dependencies dependencies, mlmodel_tflite::vsdk::ResourceConfig configuration)
-            : dependencies(std::move(dependencies)), configuration(std::move(configuration)) {}
-
-        int Report(const char *format, va_list args) override
-        {
-            char buffer[4096];
-            static_cast<void>(vsnprintf(buffer, sizeof(buffer), format, args));
-            interpreter_error_data = buffer;
-            return 0;
-        }
-
-        // The dependencies and configuration we were given at
-        // construction / reconfiguration.
-        mlmodel_tflite::vsdk::Dependencies dependencies;
-        mlmodel_tflite::vsdk::ResourceConfig configuration;
-
-        // This data must outlive any interpreters created from the
-        // model we build against model data.
-        std::string model_data;
-        std::unique_ptr<tflite::impl::FlatBufferModel> model;
-
-        // Metadata about input and output tensors that was extracted
-        // during configuration. Callers need this in order to know
-        // how to interact with the service.
-        struct MLModelService::metadata metadata;
-
-        //  The label path is a file that relates the outputs of the label tensor ints to strings
-        std::string label_path;
-
-        // Maps from string names of tensors to the numeric
-        // value. Note that the keys here are the renamed tensors, if
-        // applicable.
-        std::unordered_map<std::string, int> input_tensor_indices_by_name;
-        std::unordered_map<std::string, int> output_tensor_indices_by_name;
-
-        // Protects interpreter_error_data and interpreter
-        std::mutex interpreter_mutex;
-
-        // The `Report` method will overwrite this string.
-        std::string interpreter_error_data;
-
-        // The interpreter itself.
-        std::unique_ptr<tflite::impl::Interpreter> interpreter;
-    };
 
     ////////
 

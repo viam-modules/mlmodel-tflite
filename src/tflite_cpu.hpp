@@ -47,7 +47,7 @@ namespace mlmodel_tflite
         explicit MLModelServiceTFLite(mlmodel_tflite::vsdk::Dependencies dependencies,
                                       mlmodel_tflite::vsdk::ResourceConfig configuration)
             : MLModelService(configuration.name()),
-              state_(configure_(std::move(dependencies), std::move(configuration)));
+              state_(configure_(std::move(dependencies), std::move(configuration))) {}
 
         ~MLModelServiceTFLite() final;
 
@@ -76,7 +76,7 @@ namespace mlmodel_tflite
         // All of the meaningful internal state of the service is held in
         // a separate state object to help ensure clean replacement of our
         // internals during reconfiguration.
-        struct state_ final : public tflite::ErrorReporter;
+        // struct state_ final : public tflite::ErrorReporter;
 
         // A visitor that can populate a TFLiteTensor given a MLModelService::tensor_view.
         class write_to_tflite_tensor_visitor_ : public boost::static_visitor<TfLiteStatus>
