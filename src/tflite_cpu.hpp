@@ -80,9 +80,7 @@ namespace mlmodel_tflite
         class write_to_tflite_tensor_visitor_ : public boost::static_visitor<TfLiteStatus>
         {
         public:
-            /* write_to_tflite_tensor_visitor_(const std::string *name, TfLiteTensor *tflite_tensor)
-                : name_(name), tflite_tensor_(tflite_tensor) {}; */
-            write_to_tflite_tensor_visitor_(const std::string *name, TfLiteTensor *tflite_tensor);
+                       write_to_tflite_tensor_visitor_(const std::string *name, TfLiteTensor *tflite_tensor);
 
             template <typename T>
             TfLiteStatus operator()(const T &mlmodel_tensor) const;

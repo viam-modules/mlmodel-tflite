@@ -256,8 +256,6 @@ namespace mlmodel_tflite
         return state_->metadata;
     }
 
-    // struct state_;
-
     void MLModelServiceTFLite::check_stopped_inlock_() const
     {
         if (!state_)
