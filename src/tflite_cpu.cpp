@@ -39,12 +39,14 @@
 namespace mlmodel_tflite
 {
 
+    // namespace vsdk = ::viam::sdk;
+
     // All of the meaningful internal state of the service is held in
     // a separate state object to help ensure clean replacement of our
     // internals during reconfiguration.
     struct MLModelServiceTFLite::state_ final : public tflite::ErrorReporter
     {
-        explicit state_(mlmodel_tflite::vsdk::Dependencies dependencies, mlmodel_tflite::vsdk::ResourceConfig configuration)
+        explicit state_(viam::sdk::Dependencies dependencies, viam::sdk::ResourceConfig configuration)
             : dependencies(std::move(dependencies)), configuration(std::move(configuration)) {}
 
         int Report(const char *format, va_list args) override
@@ -57,8 +59,8 @@ namespace mlmodel_tflite
 
         // The dependencies and configuration we were given at
         // construction / reconfiguration.
-        mlmodel_tflite::vsdk::Dependencies dependencies;
-        mlmodel_tflite::vsdk::ResourceConfig configuration;
+        viam::sdk::Dependencies dependencies;
+        viam::sdk::ResourceConfig configuration;
 
         // This data must outlive any interpreters created from the
         // model we build against model data.
@@ -89,10 +91,10 @@ namespace mlmodel_tflite
         std::unique_ptr<tflite::impl::Interpreter> interpreter;
     };
 
-    /* explicit MLModelServiceTFLite::MLModelServiceTFLite(mlmodel_tflite::vsdk::Dependencies dependencies,
-                                                        mlmodel_tflite::vsdk::ResourceConfig configuration)
+    MLModelServiceTFLite(viam::sdk::Dependencies dependencies,
+                         viam::sdk::ResourceConfig configuration)
         : MLModelService(configuration.name()),
-          state_(configure_(std::move(dependencies), std::move(configuration))) {} */
+          state_(configure_(std::move(dependencies), std::move(configuration))) {}
 
     MLModelServiceTFLite::~MLModelServiceTFLite()
     {
@@ -102,7 +104,7 @@ namespace mlmodel_tflite
         // drain.
     }
 
-    void MLModelServiceTFLite::stop(const mlmodel_tflite::vsdk::ProtoStruct &extra) noexcept
+    void MLModelServiceTFLite::stop(const viam::sdk::ProtoStruct &extra) noexcept
     {
         return stop();
     }
@@ -114,8 +116,8 @@ namespace mlmodel_tflite
         state_.reset();
     }
 
-    void MLModelServiceTFLite::reconfigure(const mlmodel_tflite::vsdk::Dependencies &dependencies,
-                                           const mlmodel_tflite::vsdk::ResourceConfig &configuration)
+    void MLModelServiceTFLite::reconfigure(const viam::sdk::Dependencies &dependencies,
+                                           const viam::sdk::ResourceConfig &configuration)
     {
         const std::unique_lock<std::shared_mutex> state_wlock(state_rwmutex_);
         check_stopped_inlock_();
@@ -124,7 +126,7 @@ namespace mlmodel_tflite
     }
 
     std::shared_ptr<MLModelServiceTFLite::named_tensor_views> MLModelServiceTFLite::infer(const named_tensor_views &inputs,
-                                                                                          const mlmodel_tflite::vsdk::ProtoStruct &extra)
+                                                                                          const viam::sdk::ProtoStruct &extra)
     {
 
         // We need to lock state so we are protected against reconfiguration, but
@@ -243,7 +245,7 @@ namespace mlmodel_tflite
         return {std::move(inference_result), views};
     }
 
-    struct MLModelServiceTFLite::metadata MLModelServiceTFLite::metadata(const vsdk::ProtoStruct &extra)
+    struct MLModelServiceTFLite::metadata MLModelServiceTFLite::metadata(const viam::sdk::ProtoStruct &extra)
     {
         // Just return a copy of our metadata from leased state.
         const std::shared_lock<std::shared_mutex> state_rlock(state_rwmutex_);
@@ -263,8 +265,8 @@ namespace mlmodel_tflite
         }
     }
 
-    std::unique_ptr<struct MLModelServiceTFLite::state_> MLModelServiceTFLite::configure_(mlmodel_tflite::vsdk::Dependencies dependencies,
-                                                                                          mlmodel_tflite::vsdk::ResourceConfig configuration)
+    std::unique_ptr<struct MLModelServiceTFLite::state_> MLModelServiceTFLite::configure_(viam::sdk::Dependencies dependencies,
+                                                                                          viam::sdk::ResourceConfig configuration)
     {
 
         auto state =

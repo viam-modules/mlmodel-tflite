@@ -23,7 +23,6 @@
 namespace mlmodel_tflite
 {
 
-    namespace vsdk = ::viam::sdk;
     constexpr char service_name[] = "viam_tflite_cpu";
 
     // An MLModelService instance which runs TensorFlow Lite models.
@@ -37,40 +36,35 @@ namespace mlmodel_tflite
     //   -- `label_path`:  An absolute filesystem path to a .txt file of the model's category labels.
     //
     // Any additional configuration fields are ignored.
-    class MLModelServiceTFLite : public mlmodel_tflite::vsdk::MLModelService,
-                                 public mlmodel_tflite::vsdk::Stoppable,
-                                 public mlmodel_tflite::vsdk::Reconfigurable
+    class MLModelServiceTFLite : public viam::sdk::MLModelService,
+                                 public viam::sdk::Stoppable,
+                                 public viam::sdk::Reconfigurable
     {
         class write_to_tflite_tensor_visitor_;
 
     public:
-        explicit MLModelServiceTFLite(mlmodel_tflite::vsdk::Dependencies dependencies,
-                                      mlmodel_tflite::vsdk::ResourceConfig configuration)
-            : MLModelService(configuration.name()),
-              state_(configure_(std::move(dependencies), std::move(configuration))) {}
-
         ~MLModelServiceTFLite() final;
 
-        void stop(const mlmodel_tflite::vsdk::ProtoStruct &extra) noexcept final;
+        void stop(const viam::sdk::ProtoStruct &extra) noexcept final;
 
         /// @brief Stops the MLModelServiceTFLite from running.
         void stop() noexcept;
 
-        void reconfigure(const mlmodel_tflite::vsdk::Dependencies &dependencies,
-                         const mlmodel_tflite::vsdk::ResourceConfig &configuration) final;
+        void reconfigure(const viam::sdk::Dependencies &dependencies,
+                         const viam::sdk::ResourceConfig &configuration) final;
 
         std::shared_ptr<named_tensor_views> infer(const named_tensor_views &inputs,
-                                                  const mlmodel_tflite::vsdk::ProtoStruct &extra) final;
+                                                  const viam::sdk::ProtoStruct &extra) final;
 
-        struct metadata metadata(const vsdk::ProtoStruct &extra) final;
+        struct metadata metadata(const ::viam::sdk::ProtoStruct &extra) final;
 
     private:
         struct state_;
 
         void check_stopped_inlock_() const;
 
-        static std::unique_ptr<struct state_> configure_(mlmodel_tflite::vsdk::Dependencies dependencies,
-                                                         mlmodel_tflite::vsdk::ResourceConfig configuration);
+        static std::unique_ptr<struct state_> configure_(viam::sdk::Dependencies dependencies,
+                                                         viam::sdk::ResourceConfig configuration);
 
         static MLModelService::tensor_info::data_types service_data_type_from_tflite_data_type_(
             TfLiteType type);
