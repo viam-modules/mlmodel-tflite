@@ -43,6 +43,8 @@ namespace mlmodel_tflite
         class write_to_tflite_tensor_visitor_;
 
     public:
+        MLModelServiceTFLite(viam::sdk::Dependencies dependencies, viam::sdk::ResourceConfig configuration);
+
         ~MLModelServiceTFLite() final;
 
         void stop(const viam::sdk::ProtoStruct &extra) noexcept final;

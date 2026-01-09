@@ -91,8 +91,8 @@ namespace mlmodel_tflite
         std::unique_ptr<tflite::impl::Interpreter> interpreter;
     };
 
-    MLModelServiceTFLite(viam::sdk::Dependencies dependencies,
-                         viam::sdk::ResourceConfig configuration)
+    MLModelServiceTFLite::MLModelServiceTFLite(viam::sdk::Dependencies dependencies,
+                                               viam::sdk::ResourceConfig configuration)
         : MLModelService(configuration.name()),
           state_(configure_(std::move(dependencies), std::move(configuration))) {}
 
