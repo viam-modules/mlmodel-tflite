@@ -91,6 +91,9 @@ namespace mlmodel_tflite
         std::unique_ptr<tflite::impl::Interpreter> interpreter;
     };
 
+    MLModelServiceTFLite::write_to_tflite_tensor_visitor_::write_to_tflite_tensor_visitor_(const std::string *name, TfLiteTensor *tflite_tensor)
+        : name_(name), tflite_tensor_(tflite_tensor) {};
+
     MLModelServiceTFLite::MLModelServiceTFLite(viam::sdk::Dependencies dependencies,
                                                viam::sdk::ResourceConfig configuration)
         : MLModelService(configuration.name()),
@@ -535,9 +538,6 @@ namespace mlmodel_tflite
         }
         }
     }
-
-    /* MLModelServiceTFLite::write_to_tflite_tensor_visitor_::write_to_tflite_tensor_visitor_(const std::string *name, TfLiteTensor *tflite_tensor)
-        : name_(name), tflite_tensor_(tflite_tensor) {}; */
 
     template <typename T>
     TfLiteStatus MLModelServiceTFLite::write_to_tflite_tensor_visitor_::operator()(const T &mlmodel_tensor) const
