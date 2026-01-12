@@ -2,16 +2,16 @@ name: Run linter and build
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   build:
     strategy:
       matrix:
         # TODO(RSDK-10636): run the build on windows-2019, too, when it's is tolerably fast
-        runs_on: [ubuntu-22.04, ubuntu-22.04-arm, macos-14, macos-13]
+        runs_on: [ubuntu-22.04, ubuntu-22.04-arm, macos-14]
     name: "Lint and build on each platform"
     runs-on: ${{ matrix.runs_on }}
 

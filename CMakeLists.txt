@@ -52,10 +52,3 @@ target_link_libraries(tflite_cpu_library
   PUBLIC tensorflow::tensorflowlite
 )
 
-# target_link_libraries(tflite_cpu
-#   PRIVATE tflite_cpu_library
-# )
-
-# install(
-#   TARGETS tflite_cpu
-# )
