@@ -1,23 +1,9 @@
-#include <fstream>
-#include <iostream>
-#include <mutex>
 #include <shared_mutex>
-#include <sstream>
-#include <stdexcept>
 
 #include <tensorflow/lite/c/c_api.h>
-#include <tensorflow/lite/interpreter_builder.h>
-#include <tensorflow/lite/kernels/register.h>
 
-#include <viam/sdk/common/instance.hpp>
-#include <viam/sdk/common/proto_value.hpp>
-#include <viam/sdk/components/component.hpp>
-#include <viam/sdk/config/resource.hpp>
-#include <viam/sdk/module/service.hpp>
-#include <viam/sdk/registry/registry.hpp>
 #include <viam/sdk/resource/reconfigurable.hpp>
 #include <viam/sdk/resource/stoppable.hpp>
-#include <viam/sdk/rpc/server.hpp>
 #include <viam/sdk/services/mlmodel.hpp>
 
 namespace mlmodel_tflite {
@@ -69,11 +55,6 @@ class MLModelServiceTFLite : public viam::sdk::MLModelService,
 
     static MLModelService::tensor_info::data_types service_data_type_from_tflite_data_type_(
         TfLiteType type);
-
-    // All of the meaningful internal state of the service is held in
-    // a separate state object to help ensure clean replacement of our
-    // internals during reconfiguration.
-    // struct state_ final : public tflite::ErrorReporter;
 
     // A visitor that can populate a TFLiteTensor given a MLModelService::tensor_view.
     class write_to_tflite_tensor_visitor_ : public boost::static_visitor<TfLiteStatus> {

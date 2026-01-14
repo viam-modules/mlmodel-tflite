@@ -1,4 +1,3 @@
-#include <shared_mutex>
 #include <stdexcept>
 
 #include <viam/sdk/common/instance.hpp>
