@@ -8,8 +8,6 @@
 
 namespace mlmodel_tflite {
 
-constexpr char service_name[] = "viam_tflite_cpu";
-
 // An MLModelService instance which runs TensorFlow Lite models.
 //
 // Configuration requires the following parameters:
@@ -24,8 +22,6 @@ constexpr char service_name[] = "viam_tflite_cpu";
 class MLModelServiceTFLite : public viam::sdk::MLModelService,
                              public viam::sdk::Stoppable,
                              public viam::sdk::Reconfigurable {
-    // class write_to_tflite_tensor_visitor_;
-
    public:
     MLModelServiceTFLite(viam::sdk::Dependencies dependencies,
                          viam::sdk::ResourceConfig configuration);
@@ -56,19 +52,6 @@ class MLModelServiceTFLite : public viam::sdk::MLModelService,
     static MLModelService::tensor_info::data_types service_data_type_from_tflite_data_type_(
         TfLiteType type);
 
-    // A visitor that can populate a TFLiteTensor given a MLModelService::tensor_view.
-    /* class write_to_tflite_tensor_visitor_ : public boost::static_visitor<TfLiteStatus> {
-       public:
-        write_to_tflite_tensor_visitor_(const std::string* name, TfLiteTensor* tflite_tensor);
-
-        template <typename T>
-        TfLiteStatus operator()(const T& mlmodel_tensor) const;
-
-       private:
-        const std::string* name_;
-        TfLiteTensor* tflite_tensor_;
-    };
- */
     MLModelService::tensor_views make_tensor_view_(const MLModelService::tensor_info& info,
                                                    const TfLiteTensor* const tflite_tensor);
 

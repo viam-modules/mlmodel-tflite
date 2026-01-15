@@ -38,7 +38,7 @@
 
 namespace mlmodel_tflite {
 
-// namespace vsdk = ::viam::sdk;
+constexpr char k_service_name[] = "viam_tflite_cpu";
 
 // All of the meaningful internal state of the service is held in
 // a separate state object to help ensure clean replacement of our
@@ -134,8 +134,9 @@ class write_to_tflite_tensor_visitor_ : public boost::static_visitor<TfLiteStatu
         const auto mlmodel_data_size = static_cast<size_t>(mlmodel_data_end - mlmodel_data_begin);
         if (expected_size != mlmodel_data_size) {
             std::ostringstream buffer;
-            buffer << service_name << ": tensor `" << *name_ << "` was expected to have byte size "
-                   << expected_size << " but " << mlmodel_data_size << " bytes were provided";
+            buffer << k_service_name << ": tensor `" << *name_
+                   << "` was expected to have byte size " << expected_size << " but "
+                   << mlmodel_data_size << " bytes were provided";
             throw std::invalid_argument(buffer.str());
         }
         return TfLiteTensorCopyFromBuffer(tflite_tensor_, mlmodel_data_begin, expected_size);
@@ -156,7 +157,7 @@ std::shared_ptr<MLModelServiceTFLite::named_tensor_views> MLModelServiceTFLite::
     // Ensure that enough inputs were provided.
     if (inputs.size() < state_->input_tensor_indices_by_name.size()) {
         std::ostringstream buffer;
-        buffer << service_name << ": Too few inputs provided for inference: "
+        buffer << k_service_name << ": Too few inputs provided for inference: "
                << state_->input_tensor_indices_by_name.size() << " expected, but got "
                << inputs.size() << " instead";
         throw std::invalid_argument(buffer.str());
@@ -172,14 +173,14 @@ std::shared_ptr<MLModelServiceTFLite::named_tensor_views> MLModelServiceTFLite::
         const auto where = state_->input_tensor_indices_by_name.find(kv.first);
         if (where == state_->input_tensor_indices_by_name.end()) {
             std::ostringstream buffer;
-            buffer << service_name << ": Tensor name `" << kv.first << "`"
+            buffer << k_service_name << ": Tensor name `" << kv.first << "`"
                    << " is not a known input tensor name for the model";
             throw std::invalid_argument(buffer.str());
         }
         auto* const tensor = state_->interpreter->tensor(where->second);
         if (!tensor) {
             std::ostringstream buffer;
-            buffer << service_name << ": Failed to obtain tflite input tensor for `" << kv.first
+            buffer << k_service_name << ": Failed to obtain tflite input tensor for `" << kv.first
                    << "` (index " << where->second << ")";
             throw std::invalid_argument(buffer.str());
         }
@@ -189,7 +190,7 @@ std::shared_ptr<MLModelServiceTFLite::named_tensor_views> MLModelServiceTFLite::
 
         if (tflite_status != TfLiteStatus::kTfLiteOk) {
             std::ostringstream buffer;
-            buffer << service_name << ": input tensor `" << kv.first
+            buffer << k_service_name << ": input tensor `" << kv.first
                    << "` failed population: " << state_->interpreter_error_data;
             throw std::invalid_argument(buffer.str());
         }
@@ -198,7 +199,7 @@ std::shared_ptr<MLModelServiceTFLite::named_tensor_views> MLModelServiceTFLite::
     // Invoke the interpreter and return any failure information.
     if (state_->interpreter->Invoke() != TfLiteStatus::kTfLiteOk) {
         std::ostringstream buffer;
-        buffer << service_name
+        buffer << k_service_name
                << ": interpreter invocation failed: " << state_->interpreter_error_data;
         throw std::runtime_error(buffer.str());
     }
@@ -264,7 +265,7 @@ struct MLModelServiceTFLite::metadata MLModelServiceTFLite::metadata(
 void MLModelServiceTFLite::check_stopped_inlock_() const {
     if (!state_) {
         std::ostringstream buffer;
-        buffer << service_name << ": service is stopped: ";
+        buffer << k_service_name << ": service is stopped: ";
         throw std::runtime_error(buffer.str());
     }
 }
@@ -279,13 +280,13 @@ std::unique_ptr<struct MLModelServiceTFLite::state_> MLModelServiceTFLite::confi
     auto model_path = attributes.find("model_path");
     if (model_path == attributes.end()) {
         std::ostringstream buffer;
-        buffer << service_name << ": Required parameter `model_path` not found in configuration";
+        buffer << k_service_name << ": Required parameter `model_path` not found in configuration";
         throw std::invalid_argument(buffer.str());
     }
     const auto* const model_path_string = model_path->second.get<std::string>();
     if (!model_path_string || model_path_string->empty()) {
         std::ostringstream buffer;
-        buffer << service_name
+        buffer << k_service_name
                << ": Required non-empty string parameter `model_path` is either not a string "
                   "or is an empty string";
         throw std::invalid_argument(buffer.str());
@@ -297,7 +298,7 @@ std::unique_ptr<struct MLModelServiceTFLite::state_> MLModelServiceTFLite::confi
         const auto* const lp_string = label_path->second.get<std::string>();
         if (!lp_string) {
             std::ostringstream buffer;
-            buffer << service_name << ": string parameter `label_path` is not a string ";
+            buffer << k_service_name << ": string parameter `label_path` is not a string ";
             throw std::invalid_argument(buffer.str());
         }
         label_path_string = *lp_string;
@@ -318,7 +319,7 @@ std::unique_ptr<struct MLModelServiceTFLite::state_> MLModelServiceTFLite::confi
     const std::ifstream in(*model_path_string, std::ios::in | std::ios::binary);
     if (!in) {
         std::ostringstream buffer;
-        buffer << service_name << ": Failed to open file for `model_path` " << *model_path_string;
+        buffer << k_service_name << ": Failed to open file for `model_path` " << *model_path_string;
         throw std::invalid_argument(buffer.str());
     }
     std::ostringstream model_path_contents_stream;
@@ -332,7 +333,7 @@ std::unique_ptr<struct MLModelServiceTFLite::state_> MLModelServiceTFLite::confi
 
     if (!state->model) {
         std::ostringstream buffer;
-        buffer << service_name << ": Failed to load model from file `" << model_path_string
+        buffer << k_service_name << ": Failed to load model from file `" << model_path_string
                << "`: " << state->interpreter_error_data;
         throw std::invalid_argument(buffer.str());
     }
@@ -351,13 +352,14 @@ std::unique_ptr<struct MLModelServiceTFLite::state_> MLModelServiceTFLite::confi
             (*num_threads_double < 0) || (*num_threads_double >= std::numeric_limits<int>::max()) ||
             (std::trunc(*num_threads_double) != *num_threads_double)) {
             std::ostringstream buffer;
-            buffer << service_name << ": Value for field `num_threads` is not a positive integer: "
+            buffer << k_service_name
+                   << ": Value for field `num_threads` is not a positive integer: "
                    << *num_threads_double;
             throw std::invalid_argument(buffer.str());
         }
         if (builder.SetNumThreads(static_cast<int>(*num_threads_double)) != kTfLiteOk) {
             std::ostringstream buffer;
-            buffer << service_name << ": Failed to set number of threads in interpreter builder: "
+            buffer << k_service_name << ": Failed to set number of threads in interpreter builder: "
                    << state->interpreter_error_data;
             throw std::invalid_argument(buffer.str());
         }
@@ -365,7 +367,7 @@ std::unique_ptr<struct MLModelServiceTFLite::state_> MLModelServiceTFLite::confi
 
     if (builder(&state->interpreter) != kTfLiteOk) {
         std::ostringstream buffer;
-        buffer << service_name
+        buffer << k_service_name
                << ": Failed to create tflite interpreter: " << state->interpreter_error_data;
         throw std::runtime_error(buffer.str());
     }
@@ -373,7 +375,7 @@ std::unique_ptr<struct MLModelServiceTFLite::state_> MLModelServiceTFLite::confi
     // Have the interpreter allocate tensors for the model
     if (state->interpreter->AllocateTensors() != kTfLiteOk) {
         std::ostringstream buffer;
-        buffer << service_name << ": Failed to allocate tensors for tflite interpreter: "
+        buffer << k_service_name << ": Failed to allocate tensors for tflite interpreter: "
                << state->interpreter_error_data;
         throw std::runtime_error(buffer.str());
     }
@@ -390,7 +392,7 @@ std::unique_ptr<struct MLModelServiceTFLite::state_> MLModelServiceTFLite::confi
         auto ndims = TfLiteTensorNumDims(tensor);
         if (ndims == -1) {
             std::ostringstream buffer;
-            buffer << service_name
+            buffer << k_service_name
                    << ": Unable to determine input tensor shape at configuration time, "
                       "inference not possible";
             throw std::runtime_error(buffer.str());
@@ -434,7 +436,7 @@ std::unique_ptr<struct MLModelServiceTFLite::state_> MLModelServiceTFLite::confi
         auto ndims = TfLiteTensorNumDims(tensor);
         if (ndims == -1) {
             std::ostringstream buffer;
-            buffer << service_name
+            buffer << k_service_name
                    << ": Unable to determine output tensor shape at configuration time, "
                       "inference not possible";
             throw std::runtime_error(buffer.str());
@@ -494,7 +496,7 @@ MLModelServiceTFLite::service_data_type_from_tflite_data_type_(TfLiteType type) 
         }
         default: {
             std::ostringstream buffer;
-            buffer << service_name << ": Model contains unsupported tflite data type" << type;
+            buffer << k_service_name << ": Model contains unsupported tflite data type" << type;
             throw std::invalid_argument(buffer.str());
         }
     }
@@ -538,7 +540,7 @@ MLModelServiceTFLite::MLModelService::tensor_views MLModelServiceTFLite::make_te
         }
         default: {
             std::ostringstream buffer;
-            buffer << service_name
+            buffer << k_service_name
                    << ": Model returned unsupported tflite data type: " << tflite_tensor_type;
             throw std::invalid_argument(buffer.str());
         }
