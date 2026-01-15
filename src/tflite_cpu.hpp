@@ -24,7 +24,7 @@ constexpr char service_name[] = "viam_tflite_cpu";
 class MLModelServiceTFLite : public viam::sdk::MLModelService,
                              public viam::sdk::Stoppable,
                              public viam::sdk::Reconfigurable {
-    class write_to_tflite_tensor_visitor_;
+    // class write_to_tflite_tensor_visitor_;
 
    public:
     MLModelServiceTFLite(viam::sdk::Dependencies dependencies,
@@ -57,7 +57,7 @@ class MLModelServiceTFLite : public viam::sdk::MLModelService,
         TfLiteType type);
 
     // A visitor that can populate a TFLiteTensor given a MLModelService::tensor_view.
-    class write_to_tflite_tensor_visitor_ : public boost::static_visitor<TfLiteStatus> {
+    /* class write_to_tflite_tensor_visitor_ : public boost::static_visitor<TfLiteStatus> {
        public:
         write_to_tflite_tensor_visitor_(const std::string* name, TfLiteTensor* tflite_tensor);
 
@@ -68,7 +68,7 @@ class MLModelServiceTFLite : public viam::sdk::MLModelService,
         const std::string* name_;
         TfLiteTensor* tflite_tensor_;
     };
-
+ */
     MLModelService::tensor_views make_tensor_view_(const MLModelService::tensor_info& info,
                                                    const TfLiteTensor* const tflite_tensor);
 
