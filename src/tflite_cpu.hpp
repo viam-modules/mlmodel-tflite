@@ -52,13 +52,13 @@ class MLModelServiceTFLite : public viam::sdk::MLModelService,
     static MLModelService::tensor_info::data_types service_data_type_from_tflite_data_type_(
         TfLiteType type);
 
-    MLModelService::tensor_views make_tensor_view_(const MLModelService::tensor_info& info,
+    /* MLModelService::tensor_views make_tensor_view_(const MLModelService::tensor_info& info,
                                                    const TfLiteTensor* const tflite_tensor);
 
     template <typename T>
     MLModelService::tensor_views make_tensor_view_t_(const MLModelService::tensor_info& info,
                                                      const TfLiteTensor* const tflite_tensor);
-
+ */
     // Accesss to the module state is serialized. All configuration
     // state is held in the `state` type to make it easier to destroy
     // the current state and replace it with a new one.
