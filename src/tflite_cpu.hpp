@@ -1,7 +1,5 @@
 #include <shared_mutex>
 
-#include <tensorflow/lite/c/c_api.h>
-
 #include <viam/sdk/resource/reconfigurable.hpp>
 #include <viam/sdk/resource/stoppable.hpp>
 #include <viam/sdk/services/mlmodel.hpp>

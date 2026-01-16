@@ -36,6 +36,8 @@
 
 #include "tflite_cpu.hpp"
 
+namespace mlmodel_tflite {
+
 namespace {
 using namespace viam::sdk;
 
@@ -157,8 +159,6 @@ MLModelService::tensor_views tensor_views_from_tflite_tensor(
 }
 
 }  // namespace
-
-namespace mlmodel_tflite {
 
 // All of the meaningful internal state of the service is held in
 // a separate state object to help ensure clean replacement of our
