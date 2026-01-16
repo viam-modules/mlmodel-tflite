@@ -41,6 +41,49 @@ using namespace viam::sdk;
 
 constexpr char k_service_name[] = "viam_tflite_cpu";
 
+// Converts from tflites type enumeration into the model service
+// type enumeration or throws if there is no such conversion.
+static MLModelService::tensor_info::data_types service_data_type_from_tflite_data_type_(
+    TfLiteType type) {
+    switch (type) {
+        case kTfLiteInt8: {
+            return MLModelService::tensor_info::data_types::k_int8;
+        }
+        case kTfLiteUInt8: {
+            return MLModelService::tensor_info::data_types::k_uint8;
+        }
+        case kTfLiteInt16: {
+            return MLModelService::tensor_info::data_types::k_int16;
+        }
+        case kTfLiteUInt16: {
+            return MLModelService::tensor_info::data_types::k_uint16;
+        }
+        case kTfLiteInt32: {
+            return MLModelService::tensor_info::data_types::k_int32;
+        }
+        case kTfLiteUInt32: {
+            return MLModelService::tensor_info::data_types::k_uint32;
+        }
+        case kTfLiteInt64: {
+            return MLModelService::tensor_info::data_types::k_int64;
+        }
+        case kTfLiteUInt64: {
+            return MLModelService::tensor_info::data_types::k_uint64;
+        }
+        case kTfLiteFloat32: {
+            return MLModelService::tensor_info::data_types::k_float32;
+        }
+        case kTfLiteFloat64: {
+            return MLModelService::tensor_info::data_types::k_float64;
+        }
+        default: {
+            std::ostringstream buffer;
+            buffer << k_service_name << ": Model contains unsupported tflite data type" << type;
+            throw std::invalid_argument(buffer.str());
+        }
+    }
+}
+
 // The type specific version of the above function, it just
 // reinterpret_casts the tensor buffer into an MLModelService
 // tensor view and applies the necessary shape info.
@@ -534,49 +577,6 @@ std::unique_ptr<struct MLModelServiceTFLite::state_> MLModelServiceTFLite::confi
     }
 
     return state;
-}
-
-// Converts from tflites type enumeration into the model service
-// type enumeration or throws if there is no such conversion.
-MLModelServiceTFLite::MLModelService::tensor_info::data_types
-MLModelServiceTFLite::service_data_type_from_tflite_data_type_(TfLiteType type) {
-    switch (type) {
-        case kTfLiteInt8: {
-            return MLModelService::tensor_info::data_types::k_int8;
-        }
-        case kTfLiteUInt8: {
-            return MLModelService::tensor_info::data_types::k_uint8;
-        }
-        case kTfLiteInt16: {
-            return MLModelService::tensor_info::data_types::k_int16;
-        }
-        case kTfLiteUInt16: {
-            return MLModelService::tensor_info::data_types::k_uint16;
-        }
-        case kTfLiteInt32: {
-            return MLModelService::tensor_info::data_types::k_int32;
-        }
-        case kTfLiteUInt32: {
-            return MLModelService::tensor_info::data_types::k_uint32;
-        }
-        case kTfLiteInt64: {
-            return MLModelService::tensor_info::data_types::k_int64;
-        }
-        case kTfLiteUInt64: {
-            return MLModelService::tensor_info::data_types::k_uint64;
-        }
-        case kTfLiteFloat32: {
-            return MLModelService::tensor_info::data_types::k_float32;
-        }
-        case kTfLiteFloat64: {
-            return MLModelService::tensor_info::data_types::k_float64;
-        }
-        default: {
-            std::ostringstream buffer;
-            buffer << k_service_name << ": Model contains unsupported tflite data type" << type;
-            throw std::invalid_argument(buffer.str());
-        }
-    }
 }
 
 }  // namespace mlmodel_tflite

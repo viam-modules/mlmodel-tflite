@@ -19,9 +19,9 @@ namespace mlmodel_tflite {
 //   -- `label_path`:  An absolute filesystem path to a .txt file of the model's category labels.
 //
 // Any additional configuration fields are ignored.
-class MLModelServiceTFLite : public viam::sdk::MLModelService,
-                             public viam::sdk::Stoppable,
-                             public viam::sdk::Reconfigurable {
+class MLModelServiceTFLite final : public viam::sdk::MLModelService,
+                                   public viam::sdk::Stoppable,
+                                   public viam::sdk::Reconfigurable {
    public:
     MLModelServiceTFLite(viam::sdk::Dependencies dependencies,
                          viam::sdk::ResourceConfig configuration);
@@ -48,9 +48,6 @@ class MLModelServiceTFLite : public viam::sdk::MLModelService,
 
     static std::unique_ptr<struct state_> configure_(viam::sdk::Dependencies dependencies,
                                                      viam::sdk::ResourceConfig configuration);
-
-    static MLModelService::tensor_info::data_types service_data_type_from_tflite_data_type_(
-        TfLiteType type);
 
     // Accesss to the module state is serialized. All configuration
     // state is held in the `state` type to make it easier to destroy
