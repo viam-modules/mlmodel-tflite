@@ -52,7 +52,8 @@ int serve(const std::string& socket_path) try {
 }  // namespace
 
 int main(int argc, char* argv[]) {
-    const std::string usage = "usage: mlmodelservice_tflite /path/to/unix/socket";
+    const std::string usage =
+        std::string("usage: ") + std::string(argv[0]) + std::string(" /path/to/unix/socket\n");
 
     if (argc < 2) {
         std::cout << "ERROR: insufficient arguments\n";

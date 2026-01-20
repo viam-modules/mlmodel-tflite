@@ -30,5 +30,3 @@
 CMakeUserPresets.json
 build-conan/
 build/
-
-.DS_Store

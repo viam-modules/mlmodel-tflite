@@ -45,8 +45,7 @@ constexpr char k_service_name[] = "viam_tflite_cpu";
 
 // Converts from tflites type enumeration into the model service
 // type enumeration or throws if there is no such conversion.
-static MLModelService::tensor_info::data_types service_data_type_from_tflite_data_type_(
-    TfLiteType type) {
+MLModelService::tensor_info::data_types service_data_type_from_tflite_data_type(TfLiteType type) {
     switch (type) {
         case kTfLiteInt8: {
             return MLModelService::tensor_info::data_types::k_int8;
@@ -521,7 +520,7 @@ std::unique_ptr<struct MLModelServiceTFLite::state_> MLModelServiceTFLite::confi
         MLModelService::tensor_info input_info;
         const auto* name = TfLiteTensorName(tensor);
         input_info.name = name;
-        input_info.data_type = service_data_type_from_tflite_data_type_(TfLiteTensorType(tensor));
+        input_info.data_type = service_data_type_from_tflite_data_type(TfLiteTensorType(tensor));
         for (decltype(ndims) j = 0; j != ndims; ++j) {
             input_info.shape.push_back(TfLiteTensorDim(tensor, j));
         }
@@ -565,7 +564,7 @@ std::unique_ptr<struct MLModelServiceTFLite::state_> MLModelServiceTFLite::confi
         MLModelService::tensor_info output_info;
         const auto* name = TfLiteTensorName(tensor);
         output_info.name = name;
-        output_info.data_type = service_data_type_from_tflite_data_type_(TfLiteTensorType(tensor));
+        output_info.data_type = service_data_type_from_tflite_data_type(TfLiteTensorType(tensor));
         for (decltype(ndims) j = 0; j != ndims; ++j) {
             output_info.shape.push_back(TfLiteTensorDim(tensor, j));
         }
