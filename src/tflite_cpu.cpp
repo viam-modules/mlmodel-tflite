@@ -40,6 +40,7 @@ namespace mlmodel_tflite {
 
 namespace {
 using namespace viam::sdk;
+namespace vsdk = ::viam::sdk;
 
 constexpr char k_service_name[] = "viam_tflite_cpu";
 
@@ -163,7 +164,7 @@ MLModelService::tensor_views tensor_views_from_tflite_tensor(
 // a separate state object to help ensure clean replacement of our
 // internals during reconfiguration.
 struct MLModelServiceTFLite::state_ final : public tflite::ErrorReporter {
-    explicit state_(viam::sdk::Dependencies dependencies, viam::sdk::ResourceConfig configuration)
+    explicit state_(vsdk::Dependencies dependencies, vsdk::ResourceConfig configuration)
         : dependencies(std::move(dependencies)), configuration(std::move(configuration)) {}
 
     int Report(const char* format, va_list args) override {
@@ -175,8 +176,8 @@ struct MLModelServiceTFLite::state_ final : public tflite::ErrorReporter {
 
     // The dependencies and configuration we were given at
     // construction / reconfiguration.
-    viam::sdk::Dependencies dependencies;
-    viam::sdk::ResourceConfig configuration;
+    vsdk::Dependencies dependencies;
+    vsdk::ResourceConfig configuration;
 
     // This data must outlive any interpreters created from the
     // model we build against model data.
@@ -207,8 +208,8 @@ struct MLModelServiceTFLite::state_ final : public tflite::ErrorReporter {
     std::unique_ptr<tflite::impl::Interpreter> interpreter;
 };
 
-MLModelServiceTFLite::MLModelServiceTFLite(viam::sdk::Dependencies dependencies,
-                                           viam::sdk::ResourceConfig configuration)
+MLModelServiceTFLite::MLModelServiceTFLite(vsdk::Dependencies dependencies,
+                                           vsdk::ResourceConfig configuration)
     : MLModelService(configuration.name()),
       state_(configure_(std::move(dependencies), std::move(configuration))) {}
 
@@ -219,7 +220,7 @@ MLModelServiceTFLite::~MLModelServiceTFLite() {
     // drain.
 }
 
-void MLModelServiceTFLite::stop(const viam::sdk::ProtoStruct& extra) noexcept {
+void MLModelServiceTFLite::stop(const vsdk::ProtoStruct& extra) noexcept {
     return stop();
 }
 
@@ -229,8 +230,8 @@ void MLModelServiceTFLite::stop() noexcept {
     state_.reset();
 }
 
-void MLModelServiceTFLite::reconfigure(const viam::sdk::Dependencies& dependencies,
-                                       const viam::sdk::ResourceConfig& configuration) {
+void MLModelServiceTFLite::reconfigure(const vsdk::Dependencies& dependencies,
+                                       const vsdk::ResourceConfig& configuration) {
     const std::unique_lock<std::shared_mutex> state_wlock(state_rwmutex_);
     check_stopped_inlock_();
     state_.reset();
@@ -266,7 +267,7 @@ class write_to_tflite_tensor_visitor_ : public boost::static_visitor<TfLiteStatu
 };
 
 std::shared_ptr<MLModelServiceTFLite::named_tensor_views> MLModelServiceTFLite::infer(
-    const named_tensor_views& inputs, const viam::sdk::ProtoStruct& extra) {
+    const named_tensor_views& inputs, const vsdk::ProtoStruct& extra) {
     // We need to lock state so we are protected against reconfiguration, but
     // we don't want to block access to `metadata`. We use a shared lock here,
     // and an exclusive lock to protect the interpreter itself, below.
@@ -374,7 +375,7 @@ std::shared_ptr<MLModelServiceTFLite::named_tensor_views> MLModelServiceTFLite::
 }
 
 struct MLModelServiceTFLite::metadata MLModelServiceTFLite::metadata(
-    const viam::sdk::ProtoStruct& extra) {
+    const vsdk::ProtoStruct& extra) {
     // Just return a copy of our metadata from leased state.
     const std::shared_lock<std::shared_mutex> state_rlock(state_rwmutex_);
     check_stopped_inlock_();
@@ -390,7 +391,7 @@ void MLModelServiceTFLite::check_stopped_inlock_() const {
 }
 
 std::unique_ptr<struct MLModelServiceTFLite::state_> MLModelServiceTFLite::configure_(
-    viam::sdk::Dependencies dependencies, viam::sdk::ResourceConfig configuration) {
+    vsdk::Dependencies dependencies, vsdk::ResourceConfig configuration) {
     auto state = std::make_unique<struct state_>(std::move(dependencies), std::move(configuration));
 
     // Now we can begin parsing and validating the provided `configuration`.

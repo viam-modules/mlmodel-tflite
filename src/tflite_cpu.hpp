@@ -6,6 +6,8 @@
 
 namespace mlmodel_tflite {
 
+namespace vsdk = ::viam::sdk;
+
 // An MLModelService instance which runs TensorFlow Lite models.
 //
 // Configuration requires the following parameters:
@@ -17,35 +19,34 @@ namespace mlmodel_tflite {
 //   -- `label_path`:  An absolute filesystem path to a .txt file of the model's category labels.
 //
 // Any additional configuration fields are ignored.
-class MLModelServiceTFLite final : public viam::sdk::MLModelService,
-                                   public viam::sdk::Stoppable,
-                                   public viam::sdk::Reconfigurable {
+class MLModelServiceTFLite final : public vsdk::MLModelService,
+                                   public vsdk::Stoppable,
+                                   public vsdk::Reconfigurable {
    public:
-    MLModelServiceTFLite(viam::sdk::Dependencies dependencies,
-                         viam::sdk::ResourceConfig configuration);
+    MLModelServiceTFLite(vsdk::Dependencies dependencies, vsdk::ResourceConfig configuration);
 
     ~MLModelServiceTFLite() final;
 
-    void stop(const viam::sdk::ProtoStruct& extra) noexcept final;
+    void stop(const vsdk::ProtoStruct& extra) noexcept final;
 
     /// @brief Stops the MLModelServiceTFLite from running.
     void stop() noexcept;
 
-    void reconfigure(const viam::sdk::Dependencies& dependencies,
-                     const viam::sdk::ResourceConfig& configuration) final;
+    void reconfigure(const vsdk::Dependencies& dependencies,
+                     const vsdk::ResourceConfig& configuration) final;
 
     std::shared_ptr<named_tensor_views> infer(const named_tensor_views& inputs,
-                                              const viam::sdk::ProtoStruct& extra) final;
+                                              const vsdk::ProtoStruct& extra) final;
 
-    struct metadata metadata(const ::viam::sdk::ProtoStruct& extra) final;
+    struct metadata metadata(const vsdk::ProtoStruct& extra) final;
 
    private:
     struct state_;
 
     void check_stopped_inlock_() const;
 
-    static std::unique_ptr<struct state_> configure_(viam::sdk::Dependencies dependencies,
-                                                     viam::sdk::ResourceConfig configuration);
+    static std::unique_ptr<struct state_> configure_(vsdk::Dependencies dependencies,
+                                                     vsdk::ResourceConfig configuration);
 
     // Accesss to the module state is serialized. All configuration
     // state is held in the `state` type to make it easier to destroy
