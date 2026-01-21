@@ -36,11 +36,12 @@
 
 #include "tflite_cpu.hpp"
 
+namespace viam {
 namespace mlmodel_tflite {
 
 namespace {
-using namespace viam::sdk;
 namespace vsdk = ::viam::sdk;
+using namespace vsdk;
 
 constexpr char k_service_name[] = "viam_tflite_cpu";
 
@@ -158,6 +159,35 @@ MLModelService::tensor_views tensor_views_from_tflite_tensor(
     }
 }
 
+// A visitor that can populate a TFLiteTensor given a MLModelService::tensor_view.
+class write_to_tflite_tensor_visitor : public boost::static_visitor<TfLiteStatus> {
+   public:
+    write_to_tflite_tensor_visitor(const std::string* name, TfLiteTensor* tflite_tensor)
+        : name_(name), tflite_tensor_(tflite_tensor) {};
+
+    template <typename T>
+    TfLiteStatus operator()(const T& mlmodel_tensor) const {
+        const auto expected_size = TfLiteTensorByteSize(tflite_tensor_);
+        const auto* const mlmodel_data_begin =
+            reinterpret_cast<const unsigned char*>(mlmodel_tensor.data());
+        const auto* const mlmodel_data_end =
+            reinterpret_cast<const unsigned char*>(mlmodel_tensor.data() + mlmodel_tensor.size());
+        const auto mlmodel_data_size = static_cast<size_t>(mlmodel_data_end - mlmodel_data_begin);
+        if (expected_size != mlmodel_data_size) {
+            std::ostringstream buffer;
+            buffer << k_service_name << ": tensor `" << *name_
+                   << "` was expected to have byte size " << expected_size << " but "
+                   << mlmodel_data_size << " bytes were provided";
+            throw std::invalid_argument(buffer.str());
+        }
+        return TfLiteTensorCopyFromBuffer(tflite_tensor_, mlmodel_data_begin, expected_size);
+    }
+
+   private:
+    const std::string* name_;
+    TfLiteTensor* tflite_tensor_;
+};
+
 }  // namespace
 
 // All of the meaningful internal state of the service is held in
@@ -238,34 +268,6 @@ void MLModelServiceTFLite::reconfigure(const vsdk::Dependencies& dependencies,
     state_ = configure_(dependencies, configuration);
 }
 
-// A visitor that can populate a TFLiteTensor given a MLModelService::tensor_view.
-class write_to_tflite_tensor_visitor_ : public boost::static_visitor<TfLiteStatus> {
-   public:
-    write_to_tflite_tensor_visitor_(const std::string* name, TfLiteTensor* tflite_tensor)
-        : name_(name), tflite_tensor_(tflite_tensor) {};
-
-    template <typename T>
-    TfLiteStatus operator()(const T& mlmodel_tensor) const {
-        const auto expected_size = TfLiteTensorByteSize(tflite_tensor_);
-        const auto* const mlmodel_data_begin =
-            reinterpret_cast<const unsigned char*>(mlmodel_tensor.data());
-        const auto* const mlmodel_data_end =
-            reinterpret_cast<const unsigned char*>(mlmodel_tensor.data() + mlmodel_tensor.size());
-        const auto mlmodel_data_size = static_cast<size_t>(mlmodel_data_end - mlmodel_data_begin);
-        if (expected_size != mlmodel_data_size) {
-            std::ostringstream buffer;
-            buffer << k_service_name << ": tensor `" << *name_
-                   << "` was expected to have byte size " << expected_size << " but "
-                   << mlmodel_data_size << " bytes were provided";
-            throw std::invalid_argument(buffer.str());
-        }
-        return TfLiteTensorCopyFromBuffer(tflite_tensor_, mlmodel_data_begin, expected_size);
-    }
-
-    const std::string* name_;
-    TfLiteTensor* tflite_tensor_;
-};
-
 std::shared_ptr<MLModelServiceTFLite::named_tensor_views> MLModelServiceTFLite::infer(
     const named_tensor_views& inputs, const vsdk::ProtoStruct& extra) {
     // We need to lock state so we are protected against reconfiguration, but
@@ -306,7 +308,7 @@ std::shared_ptr<MLModelServiceTFLite::named_tensor_views> MLModelServiceTFLite::
         }
 
         const auto tflite_status =
-            boost::apply_visitor(write_to_tflite_tensor_visitor_(&kv.first, tensor), kv.second);
+            boost::apply_visitor(write_to_tflite_tensor_visitor(&kv.first, tensor), kv.second);
 
         if (tflite_status != TfLiteStatus::kTfLiteOk) {
             std::ostringstream buffer;
@@ -580,3 +582,4 @@ std::unique_ptr<struct MLModelServiceTFLite::state_> MLModelServiceTFLite::confi
 }
 
 }  // namespace mlmodel_tflite
+}  // namespace viam

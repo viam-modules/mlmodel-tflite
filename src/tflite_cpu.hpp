@@ -4,6 +4,7 @@
 #include <viam/sdk/resource/stoppable.hpp>
 #include <viam/sdk/services/mlmodel.hpp>
 
+namespace viam {
 namespace mlmodel_tflite {
 
 namespace vsdk = ::viam::sdk;
@@ -58,3 +59,4 @@ class MLModelServiceTFLite final : public vsdk::MLModelService,
 };
 
 }  // namespace mlmodel_tflite
+}

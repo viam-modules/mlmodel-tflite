@@ -3,7 +3,7 @@
 #include <viam/sdk/common/instance.hpp>
 #include <viam/sdk/module/service.hpp>
 #include <viam/sdk/registry/registry.hpp>
-// TODO import tflite_cpu library
+
 #include "tflite_cpu.hpp"
 
 namespace {
@@ -23,8 +23,8 @@ int serve(const std::string& socket_path) try {
 
         // Define the factory for instances of the resource.
         [](viam::sdk::Dependencies deps, viam::sdk::ResourceConfig config) {
-            return std::make_shared<mlmodel_tflite::MLModelServiceTFLite>(std::move(deps),
-                                                                          std::move(config));
+            return std::make_shared<viam::mlmodel_tflite::MLModelServiceTFLite>(std::move(deps),
+                                                                                std::move(config));
         });
 
     // Register the newly created registration with the Registry.
@@ -52,8 +52,7 @@ int serve(const std::string& socket_path) try {
 }  // namespace
 
 int main(int argc, char* argv[]) {
-    const std::string usage =
-        std::string("usage: ") + std::string(argv[0]) + std::string(" /path/to/unix/socket\n");
+    const auto usage = std::string("usage: ") + argv[0] + " /path/to/unix/socket";
 
     if (argc < 2) {
         std::cout << "ERROR: insufficient arguments\n";

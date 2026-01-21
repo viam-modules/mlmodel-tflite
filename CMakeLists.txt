@@ -40,15 +40,18 @@ find_package(tensorflowlite REQUIRED)
 
 add_library(tflite_cpu_service src/tflite_cpu.cpp)
 
-add_executable(tflite_cpu
-  src/main.cpp
-)
-
-target_link_libraries(tflite_cpu PRIVATE tflite_cpu_service)
-
 target_link_libraries(tflite_cpu_service
   PUBLIC Threads::Threads
   PUBLIC viam-cpp-sdk::viamsdk
   PRIVATE tensorflow::tensorflowlite
 )
 
+add_executable(tflite_cpu
+  src/main.cpp
+)
+
+target_link_libraries(tflite_cpu PRIVATE tflite_cpu_service)
+
+install(
+  TARGETS tflite_cpu
+)
