@@ -28,4 +28,5 @@
 *.app
 
 CMakeUserPresets.json
-build-conan
+build-conan/
+build/
