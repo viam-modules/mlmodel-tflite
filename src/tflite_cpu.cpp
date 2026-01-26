@@ -41,43 +41,43 @@ namespace mlmodel_tflite {
 
 namespace {
 namespace vsdk = ::viam::sdk;
-using namespace vsdk;
 
 constexpr char k_service_name[] = "viam_tflite_cpu";
 
 // Converts from tflites type enumeration into the model service
 // type enumeration or throws if there is no such conversion.
-MLModelService::tensor_info::data_types service_data_type_from_tflite_data_type(TfLiteType type) {
+vsdk::MLModelService::tensor_info::data_types service_data_type_from_tflite_data_type(
+    TfLiteType type) {
     switch (type) {
         case kTfLiteInt8: {
-            return MLModelService::tensor_info::data_types::k_int8;
+            return vsdk::MLModelService::tensor_info::data_types::k_int8;
         }
         case kTfLiteUInt8: {
-            return MLModelService::tensor_info::data_types::k_uint8;
+            return vsdk::MLModelService::tensor_info::data_types::k_uint8;
         }
         case kTfLiteInt16: {
-            return MLModelService::tensor_info::data_types::k_int16;
+            return vsdk::MLModelService::tensor_info::data_types::k_int16;
         }
         case kTfLiteUInt16: {
-            return MLModelService::tensor_info::data_types::k_uint16;
+            return vsdk::MLModelService::tensor_info::data_types::k_uint16;
         }
         case kTfLiteInt32: {
-            return MLModelService::tensor_info::data_types::k_int32;
+            return vsdk::MLModelService::tensor_info::data_types::k_int32;
         }
         case kTfLiteUInt32: {
-            return MLModelService::tensor_info::data_types::k_uint32;
+            return vsdk::MLModelService::tensor_info::data_types::k_uint32;
         }
         case kTfLiteInt64: {
-            return MLModelService::tensor_info::data_types::k_int64;
+            return vsdk::MLModelService::tensor_info::data_types::k_int64;
         }
         case kTfLiteUInt64: {
-            return MLModelService::tensor_info::data_types::k_uint64;
+            return vsdk::MLModelService::tensor_info::data_types::k_uint64;
         }
         case kTfLiteFloat32: {
-            return MLModelService::tensor_info::data_types::k_float32;
+            return vsdk::MLModelService::tensor_info::data_types::k_float32;
         }
         case kTfLiteFloat64: {
-            return MLModelService::tensor_info::data_types::k_float64;
+            return vsdk::MLModelService::tensor_info::data_types::k_float64;
         }
         default: {
             std::ostringstream buffer;
@@ -91,8 +91,8 @@ MLModelService::tensor_info::data_types service_data_type_from_tflite_data_type(
 // reinterpret_casts the tensor buffer into an MLModelService
 // tensor view and applies the necessary shape info.
 template <typename T>
-MLModelService::tensor_views tensor_views_from_tflite_tensor_t(
-    const MLModelService::tensor_info& info, const TfLiteTensor* const tflite_tensor) {
+vsdk::MLModelService::tensor_views tensor_views_from_tflite_tensor_t(
+    const vsdk::MLModelService::tensor_info& info, const TfLiteTensor* const tflite_tensor) {
     const auto* const tensor_data = reinterpret_cast<const T*>(TfLiteTensorData(tflite_tensor));
     const auto tensor_size_bytes = TfLiteTensorByteSize(tflite_tensor);
     const auto tensor_size_t = tensor_size_bytes / sizeof(T);
@@ -116,8 +116,8 @@ MLModelService::tensor_views tensor_views_from_tflite_tensor_t(
 
 // Creates a tensor_view which views a tflite tensor buffer. It dispatches on the
 // type and delegates to the templated version below.
-MLModelService::tensor_views tensor_views_from_tflite_tensor(
-    const MLModelService::tensor_info& info, const TfLiteTensor* const tflite_tensor) {
+vsdk::MLModelService::tensor_views tensor_views_from_tflite_tensor(
+    const vsdk::MLModelService::tensor_info& info, const TfLiteTensor* const tflite_tensor) {
     const auto tflite_tensor_type = TfLiteTensorType(tflite_tensor);
     switch (tflite_tensor_type) {
         case kTfLiteInt8: {
