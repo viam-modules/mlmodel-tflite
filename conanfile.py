@@ -43,7 +43,7 @@ class viamTfliteCpu(ConanFile):
     def requirements(self):
         # NOTE: If you update the `viam-cpp-sdk` dependency here, it
         # should also be updated in `bin/setup.{sh,ps1}`.
-        self.requires("viam-cpp-sdk/0.20.1")
+        self.requires("viam-cpp-sdk/0.38.1")
         self.requires("boost/[>=1.74.0]")
         self.requires("tensorflow-lite/2.15.0")
         # NOTE: This should match what the viam-cpp-sdk pulls (indirectly, via grpc/protobuf)

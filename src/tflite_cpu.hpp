@@ -59,4 +59,4 @@ class MLModelServiceTFLite final : public vsdk::MLModelService,
 };
 
 }  // namespace mlmodel_tflite
-}
+}  // namespace viam
