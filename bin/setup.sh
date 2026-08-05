@@ -16,7 +16,7 @@ git clone https://github.com/viamrobotics/viam-cpp-sdk.git
 pushd viam-cpp-sdk
 
 # NOTE: If you change this version, also change it in the `conanfile.py` requirements
-git checkout releases/v0.20.1
+git checkout releases/v0.39.0
 
 # Export the recipe to the cache so we can skip rebuilds gracefully
 conan export .

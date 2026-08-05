@@ -163,7 +163,7 @@ vsdk::MLModelService::tensor_views tensor_views_from_tflite_tensor(
 class write_to_tflite_tensor_visitor : public boost::static_visitor<TfLiteStatus> {
    public:
     write_to_tflite_tensor_visitor(const std::string* name, TfLiteTensor* tflite_tensor)
-        : name_(name), tflite_tensor_(tflite_tensor) {};
+        : name_(name), tflite_tensor_(tflite_tensor){};
 
     template <typename T>
     TfLiteStatus operator()(const T& mlmodel_tensor) const {
