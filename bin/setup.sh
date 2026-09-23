@@ -32,8 +32,11 @@ VIAM_CPP_SDK_VERSION=$(conan inspect -vquiet . --format=json | jq -r '.version')
 # it anyway.
 
 conan install --update \
-      --build="*" \
-      --build="~cmake/*" \
+      --build=missing \
+      --build="b2/*" \
+      --build="abseil/*" \
+      --build="re2/*" \
+      --build="openssl/*" \
       --requires=viam-cpp-sdk/${VIAM_CPP_SDK_VERSION} \
       -pr:a "${PROFILE}" \
       -s:a build_type=Release \

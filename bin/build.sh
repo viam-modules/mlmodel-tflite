@@ -23,8 +23,11 @@ rm -rf build-conan
 PROFILE="$(cd "$(dirname "$0")" && pwd)/cppstd17.profile"
 
 conan install . --update \
-      --build="*" \
-      --build="~cmake/*" \
+      --build=missing \
+      --build="b2/*" \
+      --build="abseil/*" \
+      --build="re2/*" \
+      --build="openssl/*" \
       -pr:a "${PROFILE}" \
       -s:a build_type=Release \
       -s:a "viam-cpp-sdk/*:build_type=RelWithDebInfo" \
