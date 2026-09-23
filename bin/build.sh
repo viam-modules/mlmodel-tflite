@@ -20,8 +20,11 @@ rm -rf build-conan
 # don't want to have accidentally affect our dependencies (it makes the build far too large).
 # The override itself is derived from https://github.com/conan-io/conan/issues/12656.
 
+PROFILE="$(cd "$(dirname "$0")" && pwd)/cppstd17.profile"
+
 conan install . --update \
       --build=missing \
+      -pr:a "${PROFILE}" \
       -s:a build_type=Release \
       -s:a "viam-cpp-sdk/*:build_type=RelWithDebInfo" \
       -s:a "&:build_type=RelWithDebInfo" \
@@ -39,6 +42,7 @@ conan install . --update \
 conan build . \
       --output-folder=build-conan \
       --build=none \
+      -pr:a "${PROFILE}" \
       -s:a build_type=Release \
       -s:a "viam-cpp-sdk/*:build_type=RelWithDebInfo" \
       -s:a "&:build_type=RelWithDebInfo" \

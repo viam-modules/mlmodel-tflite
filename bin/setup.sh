@@ -8,6 +8,7 @@ set -euxo pipefail
 # Set up conan
 conan --version > /dev/null 2>&1 || python -m pip install conan
 conan profile detect || echo "Conan is already installed"
+PROFILE="$(cd "$(dirname "$0")" && pwd)/cppstd17.profile"
 
 # Clone the C++ SDK repo
 mkdir -p tmp_cpp_sdk
@@ -33,6 +34,7 @@ VIAM_CPP_SDK_VERSION=$(conan inspect -vquiet . --format=json | jq -r '.version')
 conan install --update \
       --build=missing \
       --requires=viam-cpp-sdk/${VIAM_CPP_SDK_VERSION} \
+      -pr:a "${PROFILE}" \
       -s:a build_type=Release \
       -s:a "&:build_type=RelWithDebInfo" \
       -s:a compiler.cppstd=17 \
